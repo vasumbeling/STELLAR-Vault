@@ -6,7 +6,7 @@ Tala Vault is a non-custodial micro-savings platform that brings the Filipino cu
 Millions of Filipinos remain underserved by traditional financial institutions, with over 40% of adults still lacking formal bank accounts due to strict documentary requirements, high minimum balance thresholds, and ongoing account maintenance fees. At the same time, those who do save in cash or standard Philippine Peso (PHP) accounts face the gradual erosion of their purchasing power from inflation and the peso's depreciation against the US dollar. Digital wallets have improved access to financial services, but their convenience often encourages impulse spending, making it difficult for users to build long-term savings habits. Tala Vault addresses these challenges by providing a simple and accessible way for anyone with a mobile phone and internet connection to securely save in USD-backed stablecoins while using programmable features such as time-locks and savings milestones to encourage financial discipline and help users preserve and grow their wealth over time.
 
 ## How It Works
-[The core user flow, in plain language. What does a user actually do?]
+Users can create personal or community-driven "smart vaults" to lock away stablecoins (like USDC) for specific life goals—such as emergency funds, tuition fees, or entrepreneurial capital—without worrying about inflation eroding their local currency or high traditional banking fees.
 
 ## How It Uses Stellar
 Tala Vault leverages the Stellar ecosystem for its low costs, high speed, and native asset-handling capabilities:
