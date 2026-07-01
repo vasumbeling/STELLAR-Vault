@@ -41,6 +41,17 @@ export interface TransferOptions {
   onCompleted?: () => void | Promise<void>;
 }
 
+export interface PendingTransferApproval {
+  id: string;
+  sender: string;
+  recipient: string;
+  amount: number;
+  senderAuthorized: boolean;
+  receiverAuthorized: boolean;
+  status: 'awaiting_authorization' | 'ready_to_submit' | 'submitted';
+  createdAt: string;
+}
+
 const defaultState: TransferState = {
   status: 'idle',
   operation: null,
@@ -51,6 +62,91 @@ const defaultState: TransferState = {
 
 let currentState: TransferState = { ...defaultState };
 const listeners = new Set<() => void>();
+const pendingTransferStorageKey = 'stella-vault.pending-transfer-approvals';
+
+function readPendingTransfersFromStorage(): PendingTransferApproval[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(pendingTransferStorageKey);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw) as PendingTransferApproval[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingTransfersToStorage(transfers: PendingTransferApproval[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(pendingTransferStorageKey, JSON.stringify(transfers));
+}
+
+export function createPendingTransferApproval(sender: string, recipient: string, amount: number): PendingTransferApproval {
+  const transfer: PendingTransferApproval = {
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    sender,
+    recipient,
+    amount,
+    senderAuthorized: false,
+    receiverAuthorized: false,
+    status: 'awaiting_authorization',
+    createdAt: new Date().toISOString(),
+  };
+
+  const next = [transfer, ...readPendingTransfersFromStorage()];
+  writePendingTransfersToStorage(next);
+  return transfer;
+}
+
+export function getPendingTransferApprovalsForAddress(address: string): PendingTransferApproval[] {
+  return readPendingTransfersFromStorage().filter((transfer) => {
+    return transfer.sender === address || transfer.recipient === address;
+  });
+}
+
+export function getPendingTransferApproval(id: string): PendingTransferApproval | null {
+  return readPendingTransfersFromStorage().find((transfer) => transfer.id === id) ?? null;
+}
+
+export function updatePendingTransferApproval(id: string, patch: Partial<PendingTransferApproval>): PendingTransferApproval | null {
+  const transfers = readPendingTransfersFromStorage();
+  const index = transfers.findIndex((transfer) => transfer.id === id);
+  if (index === -1) {
+    return null;
+  }
+
+  const updated = {
+    ...transfers[index],
+    ...patch,
+    status: patch.senderAuthorized || patch.receiverAuthorized
+      ? ((patch.senderAuthorized === true && patch.receiverAuthorized === true) || (transfers[index].senderAuthorized && transfers[index].receiverAuthorized))
+        ? 'ready_to_submit'
+        : 'awaiting_authorization'
+      : transfers[index].status,
+  };
+
+  if (updated.senderAuthorized && updated.receiverAuthorized) {
+    updated.status = 'ready_to_submit';
+  }
+
+  transfers[index] = updated;
+  writePendingTransfersToStorage(transfers);
+  return updated;
+}
+
+export function removePendingTransferApproval(id: string) {
+  const transfers = readPendingTransfersFromStorage().filter((transfer) => transfer.id !== id);
+  writePendingTransfersToStorage(transfers);
+}
 
 function emit() {
   listeners.forEach((listener) => listener());

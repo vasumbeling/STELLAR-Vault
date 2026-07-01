@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   contractConfigured,
   readSavingsState,
@@ -8,9 +8,15 @@ import {
 import {
   depositUSDC,
   withdrawUSDC,
+  transferUSDC,
   getTransferState,
   subscribeToTransferState,
   resetTransferState,
+  createPendingTransferApproval,
+  getPendingTransferApprovalsForAddress,
+  updatePendingTransferApproval,
+  removePendingTransferApproval,
+  type PendingTransferApproval,
 } from '@/lib/transfer';
 
 interface DashboardProps {
@@ -24,6 +30,9 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
   const [loading, setLoading] = useState<boolean>(configured);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
+  const [approvalVersion, setApprovalVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
@@ -55,6 +64,14 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
       setTransferState(getTransferState());
     });
   }, []);
+
+  const pendingApproval = useMemo<PendingTransferApproval | null>(() => {
+    if (!publicKey) {
+      return null;
+    }
+
+    return getPendingTransferApprovalsForAddress(publicKey).find((item) => item.status !== 'submitted') ?? null;
+  }, [publicKey, approvalVersion]);
 
   useEffect(() => {
     // Fetch live exchange rate
@@ -104,6 +121,60 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
       setMsg('Withdrawal completed successfully!');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Withdrawal failed');
+    } finally {
+      setBusy(false);
+      resetTransferState();
+    }
+  };
+
+  const handleTransferRequest = () => {
+    if (!publicKey || !recipient || !transferAmount) return;
+
+    const pending = createPendingTransferApproval(publicKey, recipient, Number(transferAmount));
+    setApprovalVersion((value) => value + 1);
+    setMsg('Transfer request created. The receiver must approve it before it can be sent.');
+    setError('');
+    void pending;
+  };
+
+  const handleApproveAsSender = () => {
+    if (!pendingApproval || !publicKey || pendingApproval.sender !== publicKey) return;
+
+    const updated = updatePendingTransferApproval(pendingApproval.id, { senderAuthorized: true });
+    if (updated) {
+      setApprovalVersion((value) => value + 1);
+      setMsg('Sender approval recorded. Waiting for receiver approval.');
+    }
+  };
+
+  const handleApproveAsReceiver = () => {
+    if (!pendingApproval || !publicKey || pendingApproval.recipient !== publicKey) return;
+
+    const updated = updatePendingTransferApproval(pendingApproval.id, { receiverAuthorized: true });
+    if (updated) {
+      setApprovalVersion((value) => value + 1);
+      setMsg('Receiver approval recorded. The sender can now submit the transfer.');
+    }
+  };
+
+  const handleSubmitApprovedTransfer = async () => {
+    if (!pendingApproval || !publicKey || pendingApproval.sender !== publicKey || !pendingApproval.senderAuthorized || !pendingApproval.receiverAuthorized) return;
+
+    setBusy(true);
+    setError('');
+    setMsg('');
+    try {
+      await transferUSDC(pendingApproval.recipient, pendingApproval.amount, {
+        onCompleted: async () => {
+          setRecipient('');
+          setTransferAmount('');
+          removePendingTransferApproval(pendingApproval.id);
+          setApprovalVersion((value) => value + 1);
+        },
+      });
+      setMsg('USDC transfer completed successfully!');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Transfer failed');
     } finally {
       setBusy(false);
       resetTransferState();
@@ -196,6 +267,97 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
           )}
           {error && <p className="text-xs text-red-400">{error}</p>}
           {msg && <p className="text-xs text-green-400">{msg}</p>}
+        </div>
+      )}
+
+      {/* Direct Transfer Section */}
+      {publicKey && (
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-4 space-y-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Send USDC to another wallet</p>
+            <p className="mt-1 text-[11px] text-slate-500">This transfer requires explicit sender and receiver approval before it is submitted.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs text-slate-400 uppercase tracking-wide block font-semibold">
+              Recipient Address
+            </label>
+            <input
+              type="text"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              placeholder="GB..."
+              disabled={busy}
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs text-slate-400 uppercase tracking-wide block font-semibold">
+              Amount (USDC)
+            </label>
+            <input
+              type="number"
+              value={transferAmount}
+              onChange={(e) => setTransferAmount(e.target.value)}
+              placeholder="0.00"
+              disabled={busy}
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          {!pendingApproval && (
+            <button
+              onClick={handleTransferRequest}
+              disabled={!publicKey || !recipient || !transferAmount || busy || loading}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-600/10 active:scale-[0.98]"
+            >
+              {busy ? 'Processing...' : 'Start Approval Flow'}
+            </button>
+          )}
+
+          {pendingApproval && (
+            <div className="rounded-lg border border-slate-700 bg-slate-900/80 p-3 text-xs text-slate-300 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-slate-200">Approval status</span>
+                <span className="rounded-full bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-400">
+                  {pendingApproval.status}
+                </span>
+              </div>
+              <div className="space-y-1 text-[11px] text-slate-400">
+                <p>Sender: {pendingApproval.sender.slice(0, 8)}…{pendingApproval.sender.slice(-4)}</p>
+                <p>Recipient: {pendingApproval.recipient.slice(0, 8)}…{pendingApproval.recipient.slice(-4)}</p>
+                <p>Amount: {pendingApproval.amount.toFixed(7)} USDC</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                {publicKey === pendingApproval.sender && !pendingApproval.senderAuthorized && (
+                  <button
+                    onClick={handleApproveAsSender}
+                    disabled={busy}
+                    className="w-full rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    Approve as sender
+                  </button>
+                )}
+                {publicKey === pendingApproval.recipient && !pendingApproval.receiverAuthorized && (
+                  <button
+                    onClick={handleApproveAsReceiver}
+                    disabled={busy}
+                    className="w-full rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    Approve as receiver
+                  </button>
+                )}
+                {pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && publicKey === pendingApproval.sender && (
+                  <button
+                    onClick={handleSubmitApprovedTransfer}
+                    disabled={busy}
+                    className="w-full rounded-lg bg-purple-600 px-3 py-2 font-semibold text-white hover:bg-purple-500 disabled:opacity-50"
+                  >
+                    Submit transfer
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
