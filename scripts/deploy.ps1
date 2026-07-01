@@ -37,7 +37,7 @@ Write-Host "Initialising savings goal (target 1000)..."
 try {
   stellar contract invoke --id $ContractId --source-account $Identity --network $Network -- init --target 1000
 } catch {
-  Write-Host "(init skipped - contract may already be initialised)"
+  Write-Host "(init skipped — contract may already be initialised)"
 }
 
 # 5. Write NEXT_PUBLIC_CONTRACT_ID into web\.env.local

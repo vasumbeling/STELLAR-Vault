@@ -1,4 +1,5 @@
 import { rpc, Networks, Asset } from '@stellar/stellar-sdk';
+import { Keypair } from '@stellar/stellar-sdk';
 
 // Network passphrase comes from the SDK constant, NOT a hardcoded string —
 // a wrong passphrase shows up as a misleading `tx_bad_auth` error.
@@ -26,4 +27,18 @@ export async function fundTestnetAccount(publicKey: string): Promise<void> {
   if (!res.ok && res.status !== 400) {
     throw new Error('Friendbot funding failed. Try again in a moment.');
   }
+}
+
+/** Generate a brand new Stellar keypair for account creation */
+export function generateKeypair() {
+  const keypair = Keypair.random();
+  return {
+    publicKey: keypair.publicKey(),
+    secretKey: keypair.secret(),
+  };
+}
+
+/** Restore a keypair from a secret key */
+export function keypairFromSecret(secretKey: string) {
+  return Keypair.fromSecret(secretKey);
 }

@@ -164,6 +164,23 @@ async function reconnectWithStoredSession(): Promise<void> {
     return;
   }
 
+  // If last session was PIN-based, restore silently (no re-auth needed)
+  if (persisted.provider === 'passkey') {
+    const stored = loadAccount();
+    if (stored?.publicKey === persisted.address) {
+      currentSnapshot = {
+        ...currentSnapshot,
+        ...persisted,
+        status: 'ready',
+        initialized: true,
+        error: null,
+        isConnected: true,
+      };
+      emit();
+      return; // skip Freighter reconnect
+    }
+  }
+
   setSnapshot({ status: 'connecting', error: null });
 
   try {
@@ -317,6 +334,8 @@ export const walletService = {
   clearError,
   subscribe,
   getSnapshot,
+  createPinAccount,                 
+  unlockPinAccount,
 };
 
 if (typeof window !== 'undefined') {
@@ -337,4 +356,87 @@ if (typeof window !== 'undefined') {
   }
 
   void reconnectWithStoredSession();
+}
+
+// lib/wallet.ts — add below the existing walletService
+
+import { generateKeypair, keypairFromSecret, fundTestnetAccount } from '@/lib/stellar';
+import { encryptSecretKey, decryptSecretKey } from '@/lib/auth/encryption';
+import { saveAccount, loadAccount } from '@/lib/auth/storage';
+
+export async function createPinAccount(pin: string): Promise<void> {
+  setSnapshot({ status: 'connecting', error: null });
+
+  try {
+    const { publicKey, secretKey } = generateKeypair();
+    const encryptedData = await encryptSecretKey(secretKey, pin);
+    
+    // Save encrypted keypair locally
+    saveAccount({ publicKey, ...encryptedData });
+
+    // Fund on testnet — remove for mainnet
+    await fundTestnetAccount(publicKey);
+
+    const nextSnapshot: WalletSnapshot = {
+      address: publicKey,
+      publicKey,
+      network: 'testnet',
+      provider: 'passkey',       // reusing existing provider slot
+      signerAvailable: true,
+      status: 'ready',
+      initialized: true,
+      error: null,
+      isConnected: true,
+    };
+
+    currentSnapshot = nextSnapshot;
+    persistSnapshot(nextSnapshot);
+    emit();
+  } catch (error) {
+    clearStoredSnapshot();
+    setSnapshot({
+      address: null,
+      publicKey: null,
+      network: 'unknown',
+      provider: 'unknown',
+      signerAvailable: false,
+      status: 'error',
+      initialized: false,
+      error: getErrorMessage(error),
+      isConnected: false,
+    });
+  }
+}
+
+export async function unlockPinAccount(pin: string): Promise<void> {
+  setSnapshot({ status: 'connecting', error: null });
+
+  try {
+    const stored = loadAccount();
+    if (!stored) throw new Error('No account found. Please create one first.');
+
+    // This throws 'Incorrect PIN' if pin is wrong
+    await decryptSecretKey(stored, pin);
+
+    const nextSnapshot: WalletSnapshot = {
+      address: stored.publicKey,
+      publicKey: stored.publicKey,
+      network: 'testnet',
+      provider: 'passkey',
+      signerAvailable: true,
+      status: 'ready',
+      initialized: true,
+      error: null,
+      isConnected: true,
+    };
+
+    currentSnapshot = nextSnapshot;
+    persistSnapshot(nextSnapshot);
+    emit();
+  } catch (error) {
+    setSnapshot({
+      status: 'error',
+      error: getErrorMessage(error),
+    });
+  }
 }
