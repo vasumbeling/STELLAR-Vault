@@ -3,11 +3,27 @@ import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/verifyAuth"
 import { logActivity } from "@/lib/logActivity"
 
-export async function GET() {
-  const vaults = await prisma.vault.findMany({
-    orderBy: { createdAt: "desc" }
-  })
-  return Response.json(vaults)
+export async function GET(request: Request) {
+  try {
+    const auth = verifyAuth(request)
+
+    if (!auth) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const vaults = await prisma.vault.findMany({
+      where: { ownerPubkey: auth.pubkey },
+      orderBy: { createdAt: "desc" }
+    })
+    
+    return Response.json(vaults)
+  } catch (error) {
+    console.error("Vault fetch error:", error)
+    return Response.json(
+      { error: "Failed to fetch vaults" },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: Request) {
