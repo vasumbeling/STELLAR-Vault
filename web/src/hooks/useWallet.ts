@@ -1,64 +1,70 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { walletService, type WalletSnapshot, type WalletStatus } from '@/lib/wallet';
 
-const TIMEOUT_MS = 3000;
-
-// Freighter API calls can hang if the extension is missing — race them with a timeout.
-function withTimeout<T>(p: Promise<T>, fallback: T, ms = TIMEOUT_MS): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ]);
-}
-
-export interface WalletState {
-  publicKey: string | null;
+export interface WalletState extends WalletSnapshot {
+  connect: () => Promise<void>;
+  disconnect: () => Promise<void>;
+  reconnect: () => Promise<void>;
+  clearError: () => void;
   connecting: boolean;
-  error: string | null;
-  connect: () => void;
-  disconnect: () => void;
+  ready: boolean;
+  isInitializing: boolean;
 }
 
 export function useWallet(): WalletState {
-  const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<WalletSnapshot>({
+    address: null,
+    publicKey: null,
+    network: 'unknown',
+    provider: 'unknown',
+    signerAvailable: false,
+    status: 'disconnected',
+    initialized: false,
+    error: null,
+    isConnected: false,
+  });
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setSnapshot(walletService.getSnapshot());
+    setHydrated(true);
+
+    return walletService.subscribe(() => {
+      setSnapshot(walletService.getSnapshot());
+    });
+  }, []);
 
   const connect = useCallback(async () => {
-    setConnecting(true);
-    setError(null);
-    try {
-      // Dynamic import only — a static import breaks SSR (browser globals).
-      const freighter = await import('@stellar/freighter-api');
-
-      const connected = await withTimeout(freighter.isConnected(), {
-        isConnected: false,
-      });
-      if (!connected.isConnected) {
-        throw new Error(
-          'Freighter not detected. Install it from freighter.app and reload.',
-        );
-      }
-
-      // requestAccess() prompts the user and returns their address (Freighter v6).
-      const access = await freighter.requestAccess();
-      if (access.error) throw new Error(access.error);
-      if (!access.address) {
-        throw new Error('No address returned — did you approve the request?');
-      }
-
-      setPublicKey(access.address);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to connect wallet');
-    } finally {
-      setConnecting(false);
-    }
+    await walletService.connect();
   }, []);
 
-  const disconnect = useCallback(() => {
-    setPublicKey(null);
-    setError(null);
+  const disconnect = useCallback(async () => {
+    await walletService.disconnect();
   }, []);
 
-  return { publicKey, connecting, error, connect, disconnect };
+  const reconnect = useCallback(async () => {
+    await walletService.reconnect();
+  }, []);
+
+  const clearError = useCallback(() => {
+    walletService.clearError();
+  }, []);
+
+  const isConnecting = hydrated && (snapshot.status === 'connecting' || snapshot.status === 'initializing');
+  const isDisconnecting = hydrated && snapshot.status === 'disconnecting';
+
+  return useMemo(
+    () => ({
+      ...snapshot,
+      connect,
+      disconnect,
+      reconnect,
+      clearError,
+      connecting: isConnecting,
+      ready: hydrated && snapshot.status === 'ready',
+      isInitializing: hydrated && (snapshot.status === 'initializing' || isDisconnecting),
+    }),
+    [snapshot, connect, disconnect, reconnect, clearError, isConnecting, isDisconnecting, hydrated],
+  );
 }
