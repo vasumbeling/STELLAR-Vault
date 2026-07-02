@@ -1,9 +1,9 @@
 #![cfg(test)]
 use super::*;
 use crate::vault::VaultContractClient;
-use soroban_sdk::{Address, Env, String};
+use soroban_sdk::{testutils::Address as _, Address, Env, String};
 
-fn setup(env: &Env) -> VaultContractClient {
+fn setup(env: &Env) -> VaultContractClient<'_> {
     env.mock_all_auths();
     let contract_id = env.register(VaultContract, ());
     VaultContractClient::new(env, &contract_id)

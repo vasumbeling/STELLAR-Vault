@@ -2,18 +2,16 @@
 //! per-contributor ledger ("Transparent Escrow Ledger") that lets any
 //! member audit exactly who put in how much.
 
-use soroban_sdk::{contractimpl, token, Address, Env, Map, Symbol};
+use soroban_sdk::{token, Address, Env, Map, Symbol};
 
 use crate::permissions;
 use crate::vault::{DataKey, Error, VaultContract, VaultStatus, VaultType};
-use crate::VaultContractClient;
 
-#[contractimpl]
 impl VaultContract {
     /// Lock stablecoins (e.g. native USDC on Stellar) into a vault. Personal
     /// vaults only accept deposits from their creator; collaborative vaults
     /// accept deposits from any registered member.
-    pub fn deposit(env: Env, depositor: Address, vault_id: u64, amount: i128) -> Result<(), Error> {
+    pub(crate) fn deposit_impl(env: Env, depositor: Address, vault_id: u64, amount: i128) -> Result<(), Error> {
         depositor.require_auth();
 
         if amount <= 0 {
@@ -61,7 +59,7 @@ impl VaultContract {
 
     /// How much a given address has contributed to a vault in total. Anyone
     /// can query this — it's the transparency layer the protocol is named for.
-    pub fn get_contribution(env: Env, vault_id: u64, address: Address) -> i128 {
+    pub(crate) fn get_contribution_impl(env: Env, vault_id: u64, address: Address) -> i128 {
         load_contributions(&env, vault_id)
             .get(address)
             .unwrap_or(0)

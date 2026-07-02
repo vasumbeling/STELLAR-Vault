@@ -5,7 +5,7 @@
 //! own `#[contractimpl]` blocks. Soroban merges every `pub` function across
 //! those blocks into the contract's exported interface.
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String, Symbol};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String, Symbol, Vec};
 
 // ---------------------------------------------------------------------
 // Errors
@@ -173,6 +173,78 @@ impl VaultContract {
             .publish((Symbol::new(&env, "vault_closed"), caller), vault_id);
 
         Ok(())
+    }
+
+    pub fn deposit(env: Env, depositor: Address, vault_id: u64, amount: i128) -> Result<(), Error> {
+        Self::deposit_impl(env, depositor, vault_id, amount)
+    }
+
+    pub fn get_contribution(env: Env, vault_id: u64, address: Address) -> i128 {
+        Self::get_contribution_impl(env, vault_id, address)
+    }
+
+    pub fn add_member(
+        env: Env,
+        caller: Address,
+        vault_id: u64,
+        member: Address,
+        share_bps: u32,
+    ) -> Result<(), Error> {
+        Self::add_member_impl(env, caller, vault_id, member, share_bps)
+    }
+
+    pub fn remove_member(env: Env, caller: Address, vault_id: u64, member: Address) -> Result<(), Error> {
+        Self::remove_member_impl(env, caller, vault_id, member)
+    }
+
+    pub fn list_members(env: Env, vault_id: u64) -> Vec<crate::permissions::Member> {
+        Self::list_members_impl(env, vault_id)
+    }
+
+    pub fn is_vault_member(env: Env, vault_id: u64, address: Address) -> bool {
+        Self::is_vault_member_impl(env, vault_id, address)
+    }
+
+    pub fn withdraw(
+        env: Env,
+        caller: Address,
+        vault_id: u64,
+        recipient: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        Self::withdraw_impl(env, caller, vault_id, recipient, amount)
+    }
+
+    pub fn request_withdrawal(
+        env: Env,
+        requester: Address,
+        vault_id: u64,
+        recipient: Address,
+        amount: i128,
+    ) -> Result<u64, Error> {
+        Self::request_withdrawal_impl(env, requester, vault_id, recipient, amount)
+    }
+
+    pub fn approve_withdrawal(
+        env: Env,
+        approver: Address,
+        vault_id: u64,
+        request_id: u64,
+    ) -> Result<(), Error> {
+        Self::approve_withdrawal_impl(env, approver, vault_id, request_id)
+    }
+
+    pub fn execute_withdrawal(
+        env: Env,
+        caller: Address,
+        vault_id: u64,
+        request_id: u64,
+    ) -> Result<(), Error> {
+        Self::execute_withdrawal_impl(env, caller, vault_id, request_id)
+    }
+
+    pub fn get_withdrawal_request(env: Env, vault_id: u64, request_id: u64) -> Result<crate::withdraw::WithdrawalRequest, Error> {
+        Self::get_withdrawal_request_impl(env, vault_id, request_id)
     }
 
     // -------------------------------------------------------------

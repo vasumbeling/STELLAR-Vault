@@ -6,11 +6,10 @@
 //!   once it has been approved by more than half of the vault's current
 //!   members (simple majority), reflecting the paluwagan's group-decision norm.
 
-use soroban_sdk::{contractimpl, contracttype, token, Address, Env, Symbol, Vec};
+use soroban_sdk::{contracttype, token, Address, Env, Symbol, Vec};
 
 use crate::permissions;
 use crate::vault::{DataKey, Error, VaultContract, VaultStatus, VaultType};
-use crate::VaultContractClient;
 
 #[contracttype]
 #[derive(Clone)]
@@ -24,12 +23,11 @@ pub struct WithdrawalRequest {
     pub created_at: u64,
 }
 
-#[contractimpl]
 impl VaultContract {
     /// Personal-vault withdrawal. Only the creator can call this, and only
     /// once the goal has been met or the lock has elapsed (a `lock_until` of
     /// `0` means the vault was created with no lock at all).
-    pub fn withdraw(
+    pub(crate) fn withdraw_impl(
         env: Env,
         caller: Address,
         vault_id: u64,
@@ -77,7 +75,7 @@ impl VaultContract {
 
     /// Collaborative-vault step 1: a member proposes a payout. The proposer's
     /// approval is recorded automatically.
-    pub fn request_withdrawal(
+    pub(crate) fn request_withdrawal_impl(
         env: Env,
         requester: Address,
         vault_id: u64,
@@ -120,7 +118,7 @@ impl VaultContract {
     }
 
     /// Collaborative-vault step 2: a member votes to approve a pending request.
-    pub fn approve_withdrawal(
+    pub(crate) fn approve_withdrawal_impl(
         env: Env,
         approver: Address,
         vault_id: u64,
@@ -146,7 +144,7 @@ impl VaultContract {
 
     /// Collaborative-vault step 3: once a request has strictly more than 50%
     /// of current-member approvals, any member can trigger execution.
-    pub fn execute_withdrawal(
+    pub(crate) fn execute_withdrawal_impl(
         env: Env,
         caller: Address,
         vault_id: u64,
@@ -194,7 +192,7 @@ impl VaultContract {
         Ok(())
     }
 
-    pub fn get_withdrawal_request(env: Env, vault_id: u64, request_id: u64) -> Result<WithdrawalRequest, Error> {
+    pub(crate) fn get_withdrawal_request_impl(env: Env, vault_id: u64, request_id: u64) -> Result<WithdrawalRequest, Error> {
         load_request(&env, vault_id, request_id)
     }
 }

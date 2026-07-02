@@ -4,6 +4,7 @@ import { buildContributeXDR, buildWithdrawXDR } from './contract';
 import { buildPaymentXDR, pollTransaction, submitSignedXDR } from './payment';
 import { NETWORK_PASSPHRASE } from './stellar';
 import { walletService } from './wallet';
+import { recordHistoryEntry } from './history';
 
 export type TransferOperation = 'deposit' | 'withdraw' | 'transfer';
 export type TransferStatus =
@@ -287,6 +288,25 @@ async function runTransfer(
     };
 
     setState({ status: 'confirmed', message: result.message, error: null, result });
+
+    recordHistoryEntry({
+      account: sender,
+      kind: operation === 'deposit' ? 'deposit' : operation === 'withdraw' ? 'withdraw' : 'send',
+      title: operation === 'deposit' ? 'Vault deposit' : operation === 'withdraw' ? 'Vault withdrawal' : 'USDC sent',
+      description: operation === 'deposit'
+        ? `Saved ${normalizedAmount.toFixed(7)} USDC into the vault`
+        : operation === 'withdraw'
+          ? `Withdrew ${normalizedAmount.toFixed(7)} USDC from the vault`
+          : `Sent ${normalizedAmount.toFixed(7)} USDC to ${options.recipient ?? ''}`,
+      amount: normalizedAmount,
+      asset: 'USDC',
+      counterparty: operation === 'transfer' ? options.recipient ?? '' : 'vault',
+      timestamp: new Date().toISOString(),
+      source: 'local',
+      hash,
+      status: 'confirmed',
+    });
+
     if (options.onCompleted) {
       await options.onCompleted();
     }

@@ -18,6 +18,7 @@ import {
   removePendingTransferApproval,
   type PendingTransferApproval,
 } from '@/lib/transfer';
+import { loadHistory, type HistoryEntry } from '@/lib/history';
 
 interface DashboardProps {
   publicKey: string | null;
@@ -32,11 +33,11 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
-  const [approvalVersion, setApprovalVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
   const [transferState, setTransferState] = useState(getTransferState());
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const refresh = useCallback(async () => {
     if (!configured) return;
@@ -50,6 +51,15 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
       setLoading(false);
     }
   }, [configured]);
+
+  const refreshHistory = useCallback(async (address: string | null) => {
+    if (!address) {
+      setHistory([]);
+      return;
+    }
+
+    setHistory(await loadHistory(address));
+  }, []);
 
   useEffect(() => {
     if (configured) {
@@ -71,7 +81,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
     }
 
     return getPendingTransferApprovalsForAddress(publicKey).find((item) => item.status !== 'submitted') ?? null;
-  }, [publicKey, approvalVersion]);
+  }, [publicKey]);
 
   useEffect(() => {
     // Fetch live exchange rate
@@ -95,6 +105,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
         onCompleted: async () => {
           setDepositAmount('');
           await refresh();
+          await refreshHistory(publicKey);
         },
       });
       setMsg('Contribution saved successfully!');
@@ -116,6 +127,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
         onCompleted: async () => {
           setWithdrawAmount('');
           await refresh();
+          await refreshHistory(publicKey);
         },
       });
       setMsg('Withdrawal completed successfully!');
@@ -131,7 +143,6 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
     if (!publicKey || !recipient || !transferAmount) return;
 
     const pending = createPendingTransferApproval(publicKey, recipient, Number(transferAmount));
-    setApprovalVersion((value) => value + 1);
     setMsg('Transfer request created. The receiver must approve it before it can be sent.');
     setError('');
     void pending;
@@ -142,7 +153,6 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
 
     const updated = updatePendingTransferApproval(pendingApproval.id, { senderAuthorized: true });
     if (updated) {
-      setApprovalVersion((value) => value + 1);
       setMsg('Sender approval recorded. Waiting for receiver approval.');
     }
   };
@@ -152,7 +162,6 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
 
     const updated = updatePendingTransferApproval(pendingApproval.id, { receiverAuthorized: true });
     if (updated) {
-      setApprovalVersion((value) => value + 1);
       setMsg('Receiver approval recorded. The sender can now submit the transfer.');
     }
   };
@@ -169,7 +178,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
           setRecipient('');
           setTransferAmount('');
           removePendingTransferApproval(pendingApproval.id);
-          setApprovalVersion((value) => value + 1);
+          await refreshHistory(publicKey);
         },
       });
       setMsg('USDC transfer completed successfully!');
@@ -375,6 +384,34 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
           className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-sm font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/10 active:scale-[0.98]">
           {busy ? 'Processing...' : 'Convert & Save'}
         </button>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Recent activity</p>
+          <span className="text-[11px] text-slate-500">Last 12</span>
+        </div>
+        <div className="space-y-2">
+          {history.length === 0 ? (
+            <p className="text-sm text-slate-500">Your deposits, withdrawals, and transfers will appear here.</p>
+          ) : (
+            history.map((entry) => (
+              <div key={entry.id} className="rounded-lg border border-slate-800 bg-slate-800/70 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{entry.title}</p>
+                    <p className="mt-1 text-[11px] text-slate-400">{entry.description}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-400">{entry.amount.toFixed(2)} {entry.asset}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                  <span className="uppercase tracking-wide">{entry.kind}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <button

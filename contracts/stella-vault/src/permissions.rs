@@ -6,10 +6,9 @@
 //! for display/payout-splitting off-chain. Withdrawals on collaborative
 //! vaults additionally require member approval — see `withdraw.rs`.
 
-use soroban_sdk::{contractimpl, contracttype, Address, Env, Vec};
+use soroban_sdk::{contracttype, Address, Env, Vec};
 
 use crate::vault::{DataKey, Error, VaultContract, VaultType};
-use crate::VaultContractClient;
 
 #[contracttype]
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -29,10 +28,9 @@ pub struct Member {
     pub joined_at: u64,
 }
 
-#[contractimpl]
 impl VaultContract {
     /// Add a contributor to a collaborative vault. Owner-only.
-    pub fn add_member(
+    pub(crate) fn add_member_impl(
         env: Env,
         caller: Address,
         vault_id: u64,
@@ -67,7 +65,7 @@ impl VaultContract {
 
     /// Remove a contributor. Owner-only. Does not touch vault funds — any
     /// balance already contributed by that member stays escrowed in the vault.
-    pub fn remove_member(env: Env, caller: Address, vault_id: u64, member: Address) -> Result<(), Error> {
+    pub(crate) fn remove_member_impl(env: Env, caller: Address, vault_id: u64, member: Address) -> Result<(), Error> {
         caller.require_auth();
         Self::load_vault(&env, vault_id)?;
         require_owner(&env, vault_id, &caller)?;
@@ -92,11 +90,11 @@ impl VaultContract {
         Ok(())
     }
 
-    pub fn list_members(env: Env, vault_id: u64) -> Vec<Member> {
+    pub(crate) fn list_members_impl(env: Env, vault_id: u64) -> Vec<Member> {
         load_members(&env, vault_id)
     }
 
-    pub fn is_vault_member(env: Env, vault_id: u64, address: Address) -> bool {
+    pub(crate) fn is_vault_member_impl(env: Env, vault_id: u64, address: Address) -> bool {
         is_member(&env, vault_id, &address)
     }
 }
