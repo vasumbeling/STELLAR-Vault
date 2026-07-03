@@ -16,8 +16,9 @@ export function loadAccount(): StoredAccount | null {
   return raw ? (JSON.parse(raw) as StoredAccount) : null;
 }
 
-export function clearAccount(): void {
-  localStorage.removeItem(ACCOUNT_KEY);
+export function clearAccount() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(ACCOUNT_KEY);
 }
 
 export function hasAccount(): boolean {
