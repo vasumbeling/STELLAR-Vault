@@ -23,6 +23,7 @@ export function useWallet(): WalletState {
     initialized: false,
     error: null,
     isConnected: false,
+    authToken: null,
   });
   const [hydrated, setHydrated] = useState(false);
 
