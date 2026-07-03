@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
-import { useWallet } from '@/hooks/useWallet';
 import { useRouter } from 'next/navigation';
+import { useWallet } from '@/hooks/useWallet';
 import ConnectWallet from '@/components/ConnectWallet';
 import FundAccount from '@/components/FundAccount';
 import AddTrustline from '@/components/AddTrustline';
@@ -27,19 +27,24 @@ function SparkleStar({ className = '' }) {
 
 export default function Home() {
   const wallet = useWallet();
-  const { publicKey, connecting, status, network, provider, signerAvailable, error, isInitializing } = wallet;
+  const { publicKey, connecting, status, network, provider, signerAvailable, error, loading } = wallet;
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
+  // Auth guard — only decide once the wallet has actually finished hydrating
+  // and any in-flight reconnect has settled. Redirecting before that point
+  // was causing a false "not logged in" bounce right after login/create.
   useEffect(() => {
-    if (!isInitializing && !publicKey) {
+    if (!loading && !publicKey) {
       router.replace('/login');
     }
-  }, [isInitializing, publicKey, router]);
+  }, [loading, publicKey, router]);
 
-  if (isInitializing || !publicKey) {
-    return null; // or a loading spinner, avoids flashing the dashboard before redirect
+  // While we don't yet know the real auth state, or once we've confirmed
+  // there's no session, render nothing so the dashboard never flashes.
+  if (loading || !publicKey) {
+    return null;
   }
 
   return (
@@ -103,29 +108,6 @@ export default function Home() {
             </div>
           )}
         </section>
-
-        {/* Empty Wallet State Frame */}
-        {!publicKey && !connecting && (
-          <div className="mb-5 rounded-4xl border border-violet-100/40 bg-white/80 backdrop-blur-sm py-12 px-6 text-center shadow-inner">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-[#6C5DD3]">
-              <ShieldIcon className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-bold text-slate-600 mb-1">Authorization Credentials Required</p>
-            <p className="text-[11px] font-medium text-slate-400 leading-relaxed max-w-xs mx-auto">
-              Connect your Freighter hardware or browser layer extension to configure your profile token variables. 
-              If needed,{' '}
-              <a
-                href="https://freighter.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-[#6C5DD3] hover:underline"
-              >
-                Install Freighter Extension
-              </a>{' '}
-              and switch the runtime to Test Net mode.
-            </p>
-          </div>
-        )}
 
         {/* On-Chain Pipeline Interaction Gate */}
         {publicKey && (

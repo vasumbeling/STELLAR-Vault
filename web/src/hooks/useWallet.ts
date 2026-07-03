@@ -10,6 +10,8 @@ export interface WalletState extends WalletSnapshot {
   connecting: boolean;
   ready: boolean;
   isInitializing: boolean;
+  hydrated: boolean;
+  loading: boolean;
 }
 
 export function useWallet(): WalletState {
@@ -55,6 +57,15 @@ export function useWallet(): WalletState {
   const isConnecting = hydrated && (snapshot.status === 'connecting' || snapshot.status === 'initializing');
   const isDisconnecting = hydrated && snapshot.status === 'disconnecting';
 
+  // NEW — true until we've hydrated from the singleton AND any in-flight
+  // connect/reconnect/initialize has settled. Consumers (like page guards)
+  // should treat `loading === true` as "don't know yet, don't redirect."
+  const loading =
+    !hydrated ||
+    snapshot.status === 'connecting' ||
+    snapshot.status === 'initializing' ||
+    isDisconnecting;
+
   return useMemo(
     () => ({
       ...snapshot,
@@ -65,7 +76,9 @@ export function useWallet(): WalletState {
       connecting: isConnecting,
       ready: hydrated && snapshot.status === 'ready',
       isInitializing: hydrated && (snapshot.status === 'initializing' || isDisconnecting),
+      hydrated,
+      loading,
     }),
-    [snapshot, connect, disconnect, reconnect, clearError, isConnecting, isDisconnecting, hydrated],
+    [snapshot, connect, disconnect, reconnect, clearError, isConnecting, isDisconnecting, hydrated, loading],
   );
 }
