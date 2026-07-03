@@ -3,6 +3,7 @@ import {
   Operation,
   Asset,
   BASE_FEE,
+  scValToNative,
 } from '@stellar/stellar-sdk';
 import { server, NETWORK_PASSPHRASE, USDC_ISSUER } from './stellar';
 
@@ -30,6 +31,23 @@ export async function buildPaymentXDR(
     .build();
 
   return tx.toXDR();
+}
+
+export async function pollTransactionForResult(hash: string): Promise<unknown> {
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const res = await server.getTransaction(hash);
+    if (res.status !== 'NOT_FOUND') {
+      if (res.status === 'SUCCESS') {
+        if ('returnValue' in res && res.returnValue) {
+          return scValToNative(res.returnValue);
+        }
+        return undefined;
+      }
+      throw new Error(`Transaction ${res.status}`);
+    }
+  }
+  throw new Error('Transaction timed out after 60s');
 }
 
 /** Submit a Freighter-signed XDR. Returns the transaction hash. */
