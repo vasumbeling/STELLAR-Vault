@@ -438,5 +438,6 @@ export async function unlockPinAccount(pin: string): Promise<void> {
       status: 'error',
       error: getErrorMessage(error),
     });
+    throw error; // rethrow so callers (e.g. PinEntry) know the unlock failed
   }
 }

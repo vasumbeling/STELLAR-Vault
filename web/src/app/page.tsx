@@ -1,10 +1,12 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useWallet } from '@/hooks/useWallet';
 import ConnectWallet from '@/components/ConnectWallet';
 import FundAccount from '@/components/FundAccount';
 import AddTrustline from '@/components/AddTrustline';
 import SavingsDashboard from '@/components/SavingsDashboard';
+import { clearAccount } from '@/lib/auth/storage';
 
 /* ---------- Pure Inline Decorative Icons ---------- */
 function ShieldIcon({ className = '' }) {
@@ -25,10 +27,52 @@ function SparkleStar({ className = '' }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const wallet = useWallet();
-  const { publicKey, connecting, status, network, provider, signerAvailable, error } = wallet;
+  const { publicKey, connecting, status, network, provider, signerAvailable, error, disconnect, initialized } = wallet;
   const [refreshKey, setRefreshKey] = useState(0);
+  const [authChecked, setAuthChecked] = useState(false);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+// ── Auth gate ──────────────────────────────────────────────
+useEffect(() => {
+  // Wait until the wallet hook has finished hydrating/restoring
+  if (!wallet.initialized && wallet.status !== 'ready') {
+    return;
+  }
+
+  // Make sure a local account exists
+  const account = localStorage.getItem('stella_vault_account');
+  if (!account) {
+    router.replace('/register');
+    return;
+  }
+
+  // If the wallet isn't unlocked, go to login
+  if (!wallet.publicKey || !wallet.signerAvailable) {
+    router.replace('/login');
+    return;
+  }
+
+  // Everything is good
+  setAuthChecked(true);
+}, [
+  wallet.initialized,
+  wallet.status,
+  wallet.publicKey,
+  wallet.signerAvailable,
+  router,
+]);
+
+  const handleLogout = useCallback(async () => {
+    await disconnect();                              // clears 'stella-vault.wallet'
+    // clearAccount();                                   // clears the PIN-encrypted account
+    // localStorage.removeItem('stella_vault_account');  // clears the auth gate flag
+    router.replace('/login');
+  }, [disconnect, router]);
+
+  // Don't flash the dashboard while checking auth
+  if (!authChecked) return null;
 
   return (
     <main className="min-h-screen w-full bg-[#FAF6F0] text-slate-800 antialiased selection:bg-[#6C5DD3]/10">
@@ -124,7 +168,7 @@ export default function Home() {
         )}
 
         {/* Stellar Core Performance Interface */}
-        <SavingsDashboard key={refreshKey} publicKey={publicKey} />
+        <SavingsDashboard key={refreshKey} publicKey={publicKey} onLogout={handleLogout} />
 
         {/* Hackathon Meta Attributions */}
         <footer className="mt-12 text-center text-[10px] font-semibold tracking-wide text-slate-400 px-4 leading-relaxed">

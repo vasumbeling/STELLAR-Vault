@@ -1,5 +1,3 @@
-// lib/auth/encryption.ts
-
 const ITERATIONS = 100_000;
 
 async function deriveKey(pin: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {

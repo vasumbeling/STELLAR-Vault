@@ -1,5 +1,3 @@
-// lib/auth/storage.ts
-
 const ACCOUNT_KEY = 'stella_vault_account';
 
 export interface StoredAccount {
