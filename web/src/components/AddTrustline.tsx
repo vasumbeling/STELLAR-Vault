@@ -1,28 +1,10 @@
 'use client';
+
 import { useState } from 'react';
 import { buildAddUsdcTrustlineXDR } from '@/lib/trustline';
 import { signAndSubmit } from '@/lib/sign';
 
 type Status = 'idle' | 'working' | 'done' | 'error';
-
-function LinkIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-    </svg>
-  );
-}
-
-function RefreshCwIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="23 4 23 10 17 10"></polyline>
-      <polyline points="1 20 1 14 7 14"></polyline>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-    </svg>
-  );
-}
 
 export default function AddTrustline({
   publicKey,
@@ -43,39 +25,40 @@ export default function AddTrustline({
       setStatus('done');
       onDone();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to add trustline');
+      setError(e instanceof Error ? e.message : 'Failed');
       setStatus('error');
     }
   };
 
-  if (status === 'done') {
-    return (
-      <div className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-100 px-3.5 py-2 text-xs font-bold text-emerald-700">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-        USDC trustline established.
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2">
+    <div className="inline-block text-left">
       <button
         onClick={add}
-        disabled={status === 'working'}
-        className="inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-50 active:scale-[0.98]"
+        disabled={status === 'working' || status === 'done'}
+        className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-black transition-all active:scale-[0.97] disabled:opacity-50 cursor-pointer ${
+          status === 'done'
+            ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+            : 'bg-[#EAFEFE] border border-[#BCEFEF] text-[#0A4B4E] hover:bg-[#D4FAFA]'
+        }`}
       >
-        {status === 'working' ? (
-          <RefreshCwIcon className="h-4 w-4 animate-spin text-[#6C5DD3]" />
-        ) : (
-          <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
+        {status === 'working' && (
+          <span className="flex items-center gap-1.5">
+            <svg className="animate-spin h-3 w-3 text-[#0A4B4E]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            Linking…
+          </span>
         )}
-        {status === 'working' ? 'Linking Ledger Asset…' : 'Add USDC Trustline'}
+        {status === 'idle' && 'Add Trustline'}
+        {status === 'error' && 'Retry Trustline'}
+        {status === 'done' && 'Linked'}
       </button>
 
-      {error && (
-        <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 max-w-xs">
-          <p className="text-[11px] font-bold text-rose-600 leading-normal">{error}</p>
-        </div>
+      {error && status === 'error' && (
+        <p className="text-[10px] font-bold text-rose-500 mt-1.5 px-1 absolute bg-[#FAF8F5] rounded border border-rose-100 p-1 shadow-sm z-50">
+          {error}
+        </p>
       )}
     </div>
   );

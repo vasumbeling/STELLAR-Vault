@@ -20,28 +20,33 @@ import {
   type PendingTransferApproval,
 } from '@/lib/transfer';
 import { loadHistory, type HistoryEntry } from '@/lib/history';
+import Wheel from './Wheel';
+import History from './History';
+import Profile from './Profile';
+
+interface WalletContextProps {
+  publicKey: string | null;
+  connecting: boolean;
+  status: string;
+  network: string;
+  provider: string;
+  signerAvailable: boolean;
+  error: string | null;
+}
 
 interface DashboardProps {
   publicKey: string | null;
+  wallet: WalletContextProps; 
 }
 
-type Panel = 'deposit' | 'withdraw' | 'receive' | null;
-type Tab = 'home' | 'send_tab' | 'activity' | 'profile';
+type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | null;
+type Tab = 'home' | 'activity' | 'profile';
 
-/* ---------- Custom UI SVGs From Mockup Design ---------- */
-
-function BellIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-    </svg>
-  );
-}
+/* ---------- SVG Icon Toolkit ---------- */
 
 function EyeIcon({ className = '' }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
       <circle cx="12" cy="12" r="3"></circle>
     </svg>
@@ -57,89 +62,33 @@ function SparkleStar({ className = '' }) {
   );
 }
 
-function ActionIcon({ type }: { type: 'deposit' | 'withdraw' | 'send' | 'receive' }) {
-  if (type === 'deposit') {
-    return (
-      <svg className="w-6 h-6 text-[#6C5DD3]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <polyline points="19 12 12 19 5 12"></polyline>
-      </svg>
-    );
-  }
-  if (type === 'withdraw') {
-    return (
-      <svg className="w-6 h-6 text-[#6C5DD3]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <line x1="12" y1="19" x2="12" y2="5"></line>
-        <polyline points="5 12 12 5 19 12"></polyline>
-      </svg>
-    );
-  }
-  if (type === 'send') {
-    return (
-      <svg className="w-5 h-5 text-[#6C5DD3] transform rotate-[-15deg]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    );
-  }
-  return (
-    <svg className="w-5 h-5 text-[#6C5DD3]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-      <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-      <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-      <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-      <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-      <path d="M7 7h.01M17 7h.01M7 17h.01"></path>
-    </svg>
-  );
-}
-
-/* ---------- Bottom Navigation SVGs ---------- */
 function NavIcon({ type, active }: { type: Tab; active: boolean }) {
-  const color = active ? '#6C5DD3' : '#A0AEC0';
+  const color = active ? '#1A1A1A' : '#A4B0BE';
   if (type === 'home') {
     return (
-      <svg className="w-6 h-6" fill={active ? color : 'none'} stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+      <svg className="w-6 h-6" fill={active ? '#A0F0F0' : 'none'} stroke={color} strokeWidth="2.2" viewBox="0 0 24 24">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     );
   }
-  if (type === 'send_tab') {
-    return (
-      <svg className="w-6 h-6 transform rotate-[-15deg]" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    );
-  }
   if (type === 'activity') {
     return (
-      <svg className="w-6 h-6" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+      <svg className="w-6 h-6" fill="none" stroke={color} strokeWidth="2.2" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
     );
   }
   return (
-    <svg className="w-6 h-6" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+    <svg className="w-6 h-6" fill="none" stroke={color} strokeWidth="2.2" viewBox="0 0 24 24">
       <circle cx="12" cy="7" r="4"></circle>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
     </svg>
   );
 }
 
-function entryVisual(kind: string) {
-  switch (kind) {
-    case 'withdraw':
-      return { bg: 'bg-[#FFF7EE]', fg: 'text-[#B8792E]', icon: '↑' };
-    case 'transfer':
-      return { bg: 'bg-[#ECE9FF]', fg: 'text-[#6C5DD3]', icon: '➤' };
-    default:
-      return { bg: 'bg-[#E1F7EE]', fg: 'text-[#10B981]', icon: '↓' };
-  }
-}
-
-export default function SavingsDashboard({ publicKey }: DashboardProps) {
+export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) {
   const configured = contractConfigured();
   const [state, setState] = useState<SavingsState | null>(null);
   const [phpRate, setPhpRate] = useState<number>(58.60);
@@ -154,11 +103,15 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [copied, setCopied] = useState(false);
 
-  // Sliders, clamped to sensible boundaries, feed the real deposit/withdraw calls below.
+  // Form states
   const [depositAmount, setDepositAmount] = useState('250');
   const [withdrawAmount, setWithdrawAmount] = useState('50');
   const [recipient, setRecipient] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
+
+  // Sub-mode selectors for Options (Amount Input vs QR)
+  const [sendMode, setSendMode] = useState<'amount' | 'qr'>('amount');
+  const [receiveMode, setReceiveMode] = useState<'address' | 'qr'>('address');
 
   const refresh = useCallback(async () => {
     if (!configured) return;
@@ -250,21 +203,6 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
     return getPendingTransferApprovalsForAddress(publicKey).find((item) => item.status !== 'submitted') ?? null;
   }, [publicKey]);
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const identity = publicKey ? `${publicKey.slice(0, 4)}…${publicKey.slice(-4)}` : 'Guest';
-
-  const togglePanel = (next: Panel) => {
-    setError('');
-    setMsg('');
-    setPanel((current) => (current === next ? null : next));
-  };
-
   const handleCopyAddress = async () => {
     if (!publicKey) return;
     try {
@@ -272,7 +210,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // clipboard not available, ignore silently
+      // ignore
     }
   };
 
@@ -366,7 +304,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
 
   if (!configured) {
     return (
-      <div className="p-6 max-w-md mx-auto bg-white border border-violet-100 rounded-3xl text-slate-800 shadow-xl flex items-center gap-3">
+      <div className="p-6 max-w-md mx-auto bg-white border border-orange-100 rounded-3xl text-slate-800 shadow-xl flex items-center gap-3">
         <p className="text-sm font-medium text-slate-500">Deploy the Soroban tracking contract to access your assets.</p>
       </div>
     );
@@ -374,346 +312,362 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
 
   const usdcBalance = state?.saved || 0;
   const totalEquivalentInPhp = usdcBalance * phpRate;
-  const purchasingPowerSaved = usdcBalance * (phpRate * 0.06);
-  const recentPreview = history.slice(0, 3);
 
   return (
-    <div className="max-w-md mx-auto min-h-230 bg-[#F9F8FE] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col justify-between font-sans border border-slate-100/80">
+    <div className="max-w-md mx-auto min-h-210 bg-[#FAF8F5] rounded-[3.2rem] overflow-hidden shadow-2xl relative flex flex-col justify-between font-sans border border-slate-200/50">
 
-      <div className="flex-1 pb-32 overflow-y-auto">
+      {/* Primary Scroll Container */}
+      <div className="flex-1 pb-36 overflow-y-auto">
 
-        {/* Dynamic Background Organic Curves */}
-        <div className="absolute top-0 inset-x-0 h-80 bg-linear-to-b from-[#E7DCFC] via-[#F4EEFE] to-[#F9F8FE] -z-10 pointer-events-none opacity-80" />
-        <div className="absolute top-10 -right-5 w-64 h-64 rounded-full bg-white/60 blur-3xl -z-10 pointer-events-none" />
-
-        {/* Header Ribbon Bar */}
-        <div className="px-6 pt-8 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 bg-[#6C5DD3] rounded-full animate-pulse" />
-            <span className="text-sm font-black tracking-widest uppercase text-[#4A3DA3] opacity-90">STELLA VAULT</span>
-          </div>
-          <div className="relative cursor-pointer p-2.5 bg-white/80 rounded-full border border-violet-100 shadow-sm active:scale-95 transition-all">
-            <BellIcon className="w-5 h-5 text-slate-600" />
-          </div>
+        {/* Global Structural Layout Header */}
+        <div className="px-6 pt-7 flex justify-between items-center">
+          
         </div>
 
+        {/* === MAIN HOME INTERFACE === */}
         {activeTab === 'home' && (
           <>
-            {/* User Workspace Greeting */}
-            <div className="px-6 mt-6">
-              <p className="text-sm font-semibold text-slate-500">{greeting()},</p>
-              <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2 mt-0.5">
-                {identity} <SparkleStar className="w-5 h-5 text-[#6C5DD3]" />
-              </h2>
-            </div>
-
-            {/* Interactive Master Balance Card Frame */}
-            <div className="mx-4 mt-6 p-6 rounded-[2.5rem] bg-white border border-white/60 shadow-xl shadow-indigo-950/5 relative overflow-hidden">
-              <div className="absolute right-4 bottom-16 opacity-90 pointer-events-none select-none">
-              </div>
-
-              <div className="space-y-1 relative">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <span>Total Balance</span>
-                  <button onClick={() => setShowBalance(!showBalance)} className="text-slate-400 hover:text-slate-600">
+            {/* The Master Card Element */}
+            <div className="mx-4 mt-5 p-7 rounded-[2.2rem] bg-linear-to-br from-[#FF7A1A] to-[#FF4E00] text-white shadow-xl shadow-orange-700/10 relative overflow-hidden ring-10 ring-cyan-300/30">
+              
+              <div className="space-y-3 relative z-10">
+                {/* Balance Toggle Field */}
+                <div className="flex items-center gap-2 text-white/70 text-xs font-bold tracking-wide uppercase">
+                  <span>Vault Assets</span>
+                  <button onClick={() => setShowBalance(!showBalance)} className="text-white/70 hover:text-white transition-colors">
                     <EyeIcon className="w-4 h-4" />
                   </button>
                 </div>
-                {loading ? (
-                  <h1 className="text-3xl font-black text-slate-300">Loading…</h1>
-                ) : (
-                  <h1 className="text-4xl font-black text-slate-800 tracking-tight">
-                    {showBalance ? `$${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '••••••'}
-                  </h1>
-                )}
-                <p className="text-xs font-semibold text-slate-400 font-mono">
-                  {showBalance ? `≈ ₱${totalEquivalentInPhp.toLocaleString(undefined, { maximumFractionDigits: 2 })} PHP` : '≈ ₱••••••'}
-                </p>
-                <div className="inline-flex items-center gap-1.5 mt-2 rounded-full bg-[#E1F7EE] text-[#10B981] px-3 py-1 text-[11px] font-bold">
-                  <SparkleStar className="w-3 h-3" />
-                  Protected +₱{purchasingPowerSaved.toFixed(2)} from inflation
+
+                {/* Main Dynamic Ledger Row - Defaulted to PHP */}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-black text-orange-100 opacity-90 font-sans">₱</span>
+                  {loading ? (
+                    <h1 className="text-4xl font-black text-orange-200/50">Loading…</h1>
+                  ) : (
+                    <h1 className="text-5xl font-black tracking-tight">
+                      {showBalance ? totalEquivalentInPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '••••••'}
+                    </h1>
+                  )}
+                  <span className="text-xs font-bold text-orange-100/80 uppercase tracking-wider ml-1 font-sans">PHP</span>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-4 gap-2 mt-6 relative">
-                <button onClick={() => togglePanel('deposit')} className="flex flex-col items-center gap-2">
-                  <div className={`w-12 h-12 rounded-2xl transition-colors flex items-center justify-center border ${panel === 'deposit' ? 'bg-[#FFF0DC] border-orange-200' : 'bg-[#FFF7EE] hover:bg-[#FFEED9] border-orange-100'}`}>
-                    <ActionIcon type="deposit" />
+                {/* Sub-conversion Asset Array - Shows underlying USDC */}
+                <div className="pt-2 border-t border-white/10 flex items-center gap-4">
+                  <div className="inline-block bg-white/15 px-3 py-1 rounded-xl text-xs font-black">
+                    USDC ▾
                   </div>
-                  <span className="text-xs font-bold text-slate-600">Deposit</span>
-                </button>
-
-                <button onClick={() => togglePanel('withdraw')} disabled={!publicKey} className="flex flex-col items-center gap-2 disabled:opacity-40">
-                  <div className={`w-12 h-12 rounded-2xl transition-colors flex items-center justify-center border ${panel === 'withdraw' ? 'bg-[#EAE4FF] border-violet-200' : 'bg-[#F3F0FF] hover:bg-[#EAE4FF] border-violet-100'}`}>
-                    <ActionIcon type="withdraw" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-600">Withdraw</span>
-                </button>
-
-                <button onClick={() => { setPanel(null); setActiveTab('send_tab'); }} disabled={!publicKey} className="flex flex-col items-center gap-2 disabled:opacity-40">
-                  <div className="w-12 h-12 rounded-2xl bg-[#F3F0FF] hover:bg-[#EAE4FF] transition-colors flex items-center justify-center border border-violet-100">
-                    <ActionIcon type="send" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-600">Send</span>
-                </button>
-
-                <button onClick={() => togglePanel('receive')} disabled={!publicKey} className="flex flex-col items-center gap-2 disabled:opacity-40">
-                  <div className={`w-12 h-12 rounded-2xl transition-colors flex items-center justify-center border ${panel === 'receive' ? 'bg-[#EAE4FF] border-violet-200' : 'bg-[#F3F0FF] hover:bg-[#EAE4FF] border-violet-100'}`}>
-                    <ActionIcon type="receive" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-600">Receive</span>
-                </button>
-              </div>
-
-              {!publicKey && (
-                <p className="mt-4 text-center text-xs font-semibold text-slate-400">Connect your wallet to deposit, withdraw, or send.</p>
-              )}
-
-              {(error || msg || transferState.status !== 'idle') && (
-                <div className="mt-4 space-y-1">
-                  {error && <p className="text-xs font-semibold text-rose-500">{error}</p>}
-                  {msg && <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500"><SparkleStar className="w-3 h-3" />{msg}</p>}
-                  {transferState.status !== 'idle' && <p className="text-xs text-slate-400">{transferState.message}</p>}
+                  <span className="text-xs font-bold text-orange-50/80 font-mono">
+                    {showBalance ? `${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
+                  </span>
                 </div>
-              )}
-
-              {panel === 'deposit' && (
-                <div className="mt-4 p-4 bg-[#FAF8FF] border border-violet-100 rounded-3xl space-y-3">
-                  <div className="flex justify-between items-center text-xs font-bold">
-                    <span className="text-slate-400 uppercase">Slide to deposit</span>
-                    <span className="text-[#6C5DD3] font-mono">{depositAmount} USDC</span>
-                  </div>
-                  <input
-                    type="range" min="0" max="2000" step="10" value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    disabled={busy}
-                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#6C5DD3] disabled:opacity-50"
-                  />
-                  <button onClick={handleDeposit} disabled={busy || loading} className="w-full py-2.5 rounded-xl bg-[#6C5DD3] text-white text-xs font-bold disabled:opacity-50">
-                    {busy ? 'Processing…' : 'Confirm deposit'}
-                  </button>
-                </div>
-              )}
-
-              {panel === 'withdraw' && (
-                <div className="mt-4 p-4 bg-[#FAF8FF] border border-violet-100 rounded-3xl space-y-3">
-                  <div className="flex justify-between items-center text-xs font-bold">
-                    <span className="text-slate-400 uppercase">Slide to withdraw</span>
-                    <span className="text-[#6C5DD3] font-mono">{withdrawAmount} USDC</span>
-                  </div>
-                  <input
-                    type="range" min="0" max={Math.max(2000, Math.round(usdcBalance))} step="10" value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    disabled={busy}
-                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#6C5DD3] disabled:opacity-50"
-                  />
-                  <button onClick={handleWithdraw} disabled={busy || loading} className="w-full py-2.5 rounded-xl bg-white border border-[#6C5DD3] text-[#6C5DD3] text-xs font-bold disabled:opacity-50">
-                    {busy ? 'Processing…' : 'Confirm withdrawal'}
-                  </button>
-                </div>
-              )}
-
-              {panel === 'receive' && publicKey && (
-                <div className="mt-4 p-4 bg-[#FAF8FF] border border-violet-100 rounded-3xl space-y-3">
-                  <p className="text-xs font-bold text-slate-400 uppercase">Your vault address</p>
-                  <p className="break-all rounded-xl border border-violet-100 bg-white px-3 py-2.5 font-mono text-xs text-slate-700">{publicKey}</p>
-                  <button onClick={handleCopyAddress} className="w-full py-2.5 rounded-xl bg-[#6C5DD3] text-white text-xs font-bold">
-                    {copied ? 'Copied!' : 'Copy address'}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Recent Activity preview */}
-            <div className="px-5 mt-8">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">Recent activity</h3>
-                <button onClick={() => setActiveTab('activity')} className="text-xs font-bold text-[#6C5DD3] hover:underline">View all</button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {recentPreview.length === 0 ? (
-                  <p className="p-4 rounded-4xl bg-white border border-slate-50 shadow-md shadow-indigo-950/2 text-sm text-slate-400">
-                    Your deposits, withdrawals, and transfers will appear here.
-                  </p>
-                ) : (
-                  recentPreview.map((entry) => {
-                    const v = entryVisual(entry.kind);
-                    return (
-                      <div key={entry.id} className="p-4 rounded-4xl bg-white border border-slate-50 shadow-md shadow-indigo-950/2 flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full ${v.bg} ${v.fg} flex items-center justify-center shrink-0 font-black shadow-inner`}>{v.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-black text-sm text-slate-800 truncate">{entry.title}</h4>
-                          <p className="text-[11px] text-slate-400 truncate">{entry.description}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-xs font-black text-slate-800">{entry.amount.toFixed(2)} {entry.asset}</span>
-                          <p className="text-[10px] text-slate-300 font-mono">{new Date(entry.timestamp).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
               </div>
             </div>
 
-            <div className="mx-4 mt-6 overflow-hidden rounded-4xl bg-linear-to-br from-[#E8DDFF] via-[#F4EEFF] to-[#E3D7FF] p-5 border border-white/60 shadow-sm relative">
-              <div className="absolute right-0 -bottom-2.5 opacity-40 pointer-events-none">
-                <span className="text-6xl">🪴</span>
-              </div>
-              <p className="flex items-center gap-1.5 text-base font-black text-[#2D2375] tracking-tight">
-                Small saves, strong pesos <SparkleStar className="w-4 h-4 text-[#6C5DD3]" />
-              </p>
-              <p className="mt-1 text-[11px] font-semibold text-[#5B4FBF]/80 leading-relaxed max-w-[75%]">
-                Every dollar you protect here holds its value against peso inflation, star by star.
-              </p>
+            {/* Spinning Dial Core Wrapper */}
+            <div className="mt-6">
+              <Wheel 
+                activeTab={activeTab} 
+                panel={panel} 
+                setActiveTab={(tab) => setActiveTab(tab as Tab)} 
+                setPanel={setPanel} 
+              />
             </div>
-          </>
-        )}
 
-        {activeTab === 'send_tab' && (
-          <div className="px-5 mt-6">
-            <h3 className="text-lg font-black text-slate-800 tracking-tight">Send USDC</h3>
-            <p className="mt-1 text-xs text-slate-400">Transfers need both sender and receiver approval before they are submitted.</p>
-
-            {!publicKey ? (
-              <p className="mt-4 p-4 rounded-3xl bg-white border border-violet-100 text-sm text-slate-400">Connect your wallet to send funds.</p>
-            ) : (
-              <div className="mt-4 p-4 bg-white border border-violet-100 rounded-3xl space-y-3">
-                {(error || msg) && (
-                  <div className="space-y-1">
-                    {error && <p className="text-xs font-semibold text-rose-500">{error}</p>}
-                    {msg && <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500"><SparkleStar className="w-3 h-3" />{msg}</p>}
+            {/* Slide Inline Configuration Panels */}
+            {panel && (
+              <div className="mx-4 mt-2 p-5 bg-white rounded-3xl border border-slate-100 shadow-md space-y-4">
+                {(error || msg || transferState.status !== 'idle') && (
+                  <div className="p-1.5 space-y-1">
+                    {error && <p className="text-xs font-bold text-rose-500">{error}</p>}
+                    {msg && <p className="flex items-center gap-1 text-xs font-bold text-emerald-600"><SparkleStar className="w-3 h-3" />{msg}</p>}
+                    {transferState.status !== 'idle' && <p className="text-xs font-medium text-slate-400 font-mono">{transferState.message}</p>}
                   </div>
                 )}
 
-                {!pendingApproval && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold uppercase tracking-wide text-slate-400">Recipient address</label>
-                      <input
-                        type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="GB..." disabled={busy}
-                        className="w-full rounded-xl border border-violet-100 bg-[#FAF8FF] px-3 py-2.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-[#6C5DD3] disabled:opacity-50"
-                      />
+                {/* DEPOSIT CONTAINER */}
+                {panel === 'deposit' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Deposit Amount</label>
+                      <span className="text-[11px] font-bold text-slate-400 font-mono">Currency: USDC</span>
                     </div>
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold uppercase tracking-wide text-slate-400">Amount (USDC)</label>
+
+                    <div className="relative flex items-center">
                       <input
-                        type="number" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="0.00" disabled={busy}
-                        className="w-full rounded-xl border border-violet-100 bg-[#FAF8FF] px-3 py-2.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:border-[#6C5DD3] disabled:opacity-50"
+                        type="number" 
+                        value={depositAmount} 
+                        onChange={(e) => setDepositAmount(e.target.value)} 
+                        placeholder="0.00" 
+                        disabled={busy}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-4 pr-16 py-3.5 text-base font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
                       />
+                      <span className="absolute right-4 text-xs font-black text-slate-400">USDC</span>
                     </div>
-                    <button onClick={handleTransferRequest} disabled={!recipient || !transferAmount || busy} className="w-full py-3 rounded-xl bg-[#6C5DD3] text-white text-sm font-bold disabled:opacity-50">
-                      {busy ? 'Processing…' : 'Start approval flow'}
+
+                    {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
+                    <div className="bg-orange-50/50 border border-orange-100/50 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Value</span>
+                      <span className="text-sm font-black text-[#FF5E00]">
+                        ₱{((Number(depositAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
+                      </span>
+                    </div>
+
+                    <button onClick={handleDeposit} disabled={busy || loading || !depositAmount || Number(depositAmount) <= 0} className="w-full py-3.5 rounded-2xl bg-[#FF5E00] text-white text-xs font-black tracking-wider uppercase shadow-md shadow-orange-500/10 active:scale-[0.99] transition-transform disabled:opacity-40">
+                      {busy ? 'Processing Transaction…' : 'Execute Deposit'}
                     </button>
-                  </>
+                  </div>
                 )}
 
-                {pendingApproval && (
-                  <div className="space-y-3 rounded-2xl border border-violet-100 bg-[#FAF8FF] p-3 text-xs text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-slate-800">Approval status</span>
-                      <span className="rounded-full bg-[#ECE9FF] px-2 py-1 text-[10px] uppercase tracking-wide text-[#6C5DD3] font-bold">{pendingApproval.status}</span>
+                {/* WITHDRAW CONTAINER */}
+                {panel === 'withdraw' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Withdraw Amount</label>
+                      <span className="text-[11px] font-bold text-slate-400 font-mono">Max: {usdcBalance.toFixed(2)} USDC</span>
                     </div>
-                    <div className="space-y-1 text-[11px] text-slate-400">
-                      <p>Sender: {pendingApproval.sender.slice(0, 8)}…{pendingApproval.sender.slice(-4)}</p>
-                      <p>Recipient: {pendingApproval.recipient.slice(0, 8)}…{pendingApproval.recipient.slice(-4)}</p>
-                      <p>Amount: {pendingApproval.amount.toFixed(7)} USDC</p>
+                    
+                    <div className="relative flex items-center">
+                      <input
+                        type="number" 
+                        value={withdrawAmount} 
+                        onChange={(e) => setWithdrawAmount(e.target.value)} 
+                        placeholder="0.00" 
+                        disabled={busy}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-4 pr-24 py-3.5 text-base font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                      />
+                      <div className="absolute right-3 flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-400">USDC</span>
+                        <button 
+                          onClick={() => setWithdrawAmount(Math.floor(usdcBalance).toString())}
+                          className="px-2 py-1 text-[10px] font-black tracking-wide text-[#FF5E00] bg-orange-50 rounded-md uppercase"
+                        >
+                          Max
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      {publicKey === pendingApproval.sender && !pendingApproval.senderAuthorized && (
-                        <button onClick={handleApproveAsSender} disabled={busy} className="w-full rounded-xl bg-[#6C5DD3] px-3 py-2.5 font-bold text-white disabled:opacity-50">Approve as sender</button>
-                      )}
-                      {publicKey === pendingApproval.recipient && !pendingApproval.receiverAuthorized && (
-                        <button onClick={handleApproveAsReceiver} disabled={busy} className="w-full rounded-xl bg-[#10B981] px-3 py-2.5 font-bold text-white disabled:opacity-50">Approve as receiver</button>
-                      )}
-                      {pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && publicKey === pendingApproval.sender && (
-                        <button onClick={handleSubmitApprovedTransfer} disabled={busy} className="w-full rounded-xl bg-[#B8792E] px-3 py-2.5 font-bold text-white disabled:opacity-50">Submit transfer</button>
-                      )}
+
+                    {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
+                    <div className="bg-orange-50/50 border border-orange-100/50 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Value</span>
+                      <span className="text-sm font-black text-[#FF5E00]">
+                        ₱{((Number(withdrawAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
+                      </span>
                     </div>
+
+                    <button onClick={handleWithdraw} disabled={busy || loading || !withdrawAmount || Number(withdrawAmount) <= 0} className="w-full py-3.5 mt-1 rounded-2xl bg-[#FF5E00] text-white text-xs font-black tracking-wider uppercase active:scale-[0.99] transition-transform disabled:opacity-40 shadow-md shadow-orange-500/10">
+                      {busy ? 'Processing Transaction…' : 'Execute Withdrawal'}
+                    </button>
+                  </div>
+                )}
+
+                {/* RECEIVE CONTAINER */}
+                {panel === 'receive' && publicKey && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+                      <button 
+                        onClick={() => setReceiveMode('address')}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${receiveMode === 'address' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                      >
+                        My Address
+                      </button>
+                      <button 
+                        onClick={() => setReceiveMode('qr')}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${receiveMode === 'qr' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                      >
+                        Show QR Code
+                      </button>
+                    </div>
+
+                    {receiveMode === 'address' ? (
+                      <div className="space-y-3 animate-fadeIn">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Stellar Vault Address</p>
+                        <p className="break-all rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-3 font-mono text-xs text-slate-700 leading-normal">{publicKey}</p>
+                        <button onClick={handleCopyAddress} className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold active:bg-slate-200 transition-colors">
+                          {copied ? 'Copied Securely!' : 'Copy to Clipboard'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-4 space-y-3 animate-fadeIn">
+                        <div className="w-40 h-40 bg-white border border-slate-200 p-2 rounded-2xl shadow-inner flex items-center justify-center relative">
+                          <div className="absolute inset-0 bg-slate-900/5 flex items-center justify-center rounded-2xl">
+                            <div className="w-28 h-28 border-[3px] border-slate-800 flex flex-wrap p-1 gap-1 bg-white">
+                              <div className="w-8 h-8 bg-slate-800" />
+                              <div className="w-8 h-8 bg-transparent" />
+                              <div className="w-8 h-8 bg-slate-800" />
+                              <div className="w-full h-2 bg-slate-800" />
+                              <div className="w-6 h-6 bg-slate-800" />
+                              <div className="w-10 h-6 bg-slate-800" />
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Scan to send assets</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SEND CONTAINER */}
+                {panel === 'send' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Send Assets</h4>
+                      <p className="text-[11px] text-slate-400 font-medium">Multi-sig flow requiring reciprocal action clearance before deployment.</p>
+                    </div>
+
+                    {!publicKey ? (
+                      <p className="p-4 rounded-2xl bg-slate-50 text-xs text-slate-400 font-medium">Verify structural keys to invoke transmission parameters.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+                          <button 
+                            type="button"
+                            onClick={() => setSendMode('amount')}
+                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'amount' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                          >
+                            Enter Amount
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setSendMode('qr')}
+                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'qr' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                          >
+                            Scan QR Code
+                          </button>
+                        </div>
+
+                        {sendMode === 'amount' ? (
+                          <>
+                            {!pendingApproval && (
+                              <div className="space-y-3 animate-fadeIn">
+                                <div className="space-y-1.5">
+                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Recipient Account Destination</label>
+                                  <input
+                                    type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="G..." disabled={busy}
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-xs font-mono text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Payload Volume (USDC)</label>
+                                  <div className="relative flex items-center">
+                                    <input
+                                      type="number" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="0.00" disabled={busy}
+                                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-16 py-3 text-sm font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                    />
+                                    <span className="absolute right-4 text-xs font-black text-slate-400">USDC</span>
+                                  </div>
+                                </div>
+
+                                {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
+                                <div className="bg-orange-50/50 border border-orange-100/50 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Value</span>
+                                  <span className="text-sm font-black text-[#FF5E00]">
+                                    ₱{((Number(transferAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
+                                  </span>
+                                </div>
+
+                                <button onClick={handleTransferRequest} disabled={!recipient || !transferAmount || busy} className="w-full py-3.5 mt-2 rounded-2xl bg-[#FF5E00] text-white text-xs font-black uppercase tracking-widest disabled:opacity-40 shadow-md shadow-orange-500/10">
+                                  {busy ? 'Constructing Flow…' : 'Initialize Multi-Sig Stream'}
+                                </button>
+                              </div>
+                            )}
+
+                            {pendingApproval && (
+                              <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-600">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-black text-slate-800 uppercase tracking-wide">Stream Phase</span>
+                                  <span className="rounded-full bg-orange-100 px-3 py-1 text-[10px] uppercase tracking-wider text-[#FF5E00] font-black">{pendingApproval.status}</span>
+                                </div>
+                                <div className="space-y-1.5 text-[11px] text-slate-500 font-mono">
+                                  <p className="truncate">Source: {pendingApproval.sender}</p>
+                                  <p className="truncate">Target: {pendingApproval.recipient}</p>
+                                  <div className="flex justify-between items-center mt-2 bg-white p-2 rounded-lg border border-slate-100">
+                                    <span className="font-sans font-bold text-slate-800 text-xs">Value: {pendingApproval.amount.toFixed(2)} USDC</span>
+                                    <span className="font-sans font-black text-[#FF5E00] text-xs">₱{(pendingApproval.amount * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2 })} PHP</span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2 pt-2">
+                                  {publicKey === pendingApproval.sender && !pendingApproval.senderAuthorized && (
+                                    <button onClick={handleApproveAsSender} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-bold text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Approve as Signatory Source</button>
+                                  )}
+                                  {publicKey === pendingApproval.recipient && !pendingApproval.receiverAuthorized && (
+                                    <button onClick={handleApproveAsReceiver} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-bold text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Approve as Target Registry</button>
+                                  )}
+                                  {pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && publicKey === pendingApproval.sender && (
+                                    <button onClick={handleSubmitApprovedTransfer} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-black text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Submit Block payload</button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 space-y-3 animate-fadeIn">
+                            <svg className="w-10 h-10 text-slate-400 stroke-current" fill="none" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h4v4H6V4zm10 0h4v4h-4V4zM6 14h4v4H6v-4zm10 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 0h2v2h-2v-2z" />
+                            </svg>
+                            <span className="text-[11px] font-bold text-slate-500">Camera Permission Request Pending…</span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setRecipient('GBCNM4ZQXH5X2WRNZV2TL6NQUU6NMX4XF6OQWLSK3LCE5WXT5E6MSTELLA');
+                                setTransferAmount('100');
+                                setSendMode('amount');
+                                setMsg('Scanned data loaded successfully!');
+                              }}
+                              className="text-[10px] font-black uppercase text-[#FF5E00] bg-orange-50 px-2.5 py-1 rounded-md"
+                            >
+                              Mock Scan QR Code
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
 
+        {/* === ALL ACTIVITY LEDGER === */}
         {activeTab === 'activity' && (
-          <div className="px-5 mt-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-800 tracking-tight">All activity</h3>
-              <button onClick={refresh} disabled={loading} className="text-xs font-bold text-[#6C5DD3] disabled:opacity-50">
-                {loading ? 'Refreshing…' : 'Refresh'}
-              </button>
-            </div>
-            <div className="mt-4 space-y-3">
-              {history.length === 0 ? (
-                <p className="p-4 rounded-4xl bg-white border border-slate-50 shadow-md shadow-indigo-950/2 text-sm text-slate-400">
-                  Your deposits, withdrawals, and transfers will appear here.
-                </p>
-              ) : (
-                history.map((entry) => {
-                  const v = entryVisual(entry.kind);
-                  return (
-                    <div key={entry.id} className="p-4 rounded-4xl bg-white border border-slate-50 shadow-md shadow-indigo-950/2 flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-full ${v.bg} ${v.fg} flex items-center justify-center shrink-0 font-black shadow-inner`}>{v.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-sm text-slate-800 truncate">{entry.title}</h4>
-                        <p className="text-[11px] text-slate-400 truncate">{entry.description}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-xs font-black text-slate-800">{entry.amount.toFixed(2)} {entry.asset}</span>
-                        <p className="text-[10px] text-slate-300 font-mono">{new Date(entry.timestamp).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          <History 
+            history={history} 
+            loading={loading} 
+            onRefresh={refresh} 
+          />
         )}
 
+        {/* === PROFILE VIEW PANEL === */}
         {activeTab === 'profile' && (
-          <div className="px-5 mt-6">
-            <h3 className="text-lg font-black text-slate-800 tracking-tight">Profile</h3>
-            <div className="mt-4 p-5 rounded-3xl bg-white border border-violet-100 shadow-md shadow-indigo-950/2 space-y-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Wallet address</p>
-                {publicKey ? (
-                  <p className="mt-1 break-all rounded-xl border border-violet-100 bg-[#FAF8FF] px-3 py-2.5 font-mono text-xs text-slate-700">{publicKey}</p>
-                ) : (
-                  <p className="mt-1 text-sm text-slate-400">No wallet connected.</p>
-                )}
-              </div>
-              {publicKey && (
-                <button onClick={handleCopyAddress} className="w-full py-2.5 rounded-xl bg-[#6C5DD3] text-white text-xs font-bold">
-                  {copied ? 'Copied!' : 'Copy address'}
-                </button>
-              )}
-              <div className="pt-2 border-t border-violet-50 flex justify-between text-xs text-slate-500">
-                <span>Live forex rate</span>
-                <span className="font-mono font-semibold text-slate-700">1 USD = ₱{phpRate.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
+          <Profile 
+            publicKey={publicKey}
+            phpRate={phpRate}
+            copied={copied}
+            onCopyAddress={handleCopyAddress}
+            wallet={wallet}
+          />
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="absolute bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-100/80 px-4 pt-3 pb-7 flex justify-between items-center rounded-t-[2.5rem] shadow-xl shadow-slate-950/20 z-40">
-        {(['home', 'send_tab', 'activity', 'profile'] as Tab[]).map((tab) => {
+      {/* Mockup Fixed Floating Dock Menu */}
+      <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 px-3 pt-4 pb-8 flex justify-between items-center rounded-t-[2.4rem] shadow-xl shadow-slate-900/10 z-40">
+        {(['home', 'activity', 'profile'] as Tab[]).map((tab) => {
           const isSelected = activeTab === tab;
-          const label = tab === 'send_tab' ? 'Send' : tab;
+          
           return (
             <button
               key={tab}
-              onClick={() => { setActiveTab(tab); setPanel(null); }}
-              className="flex flex-col items-center justify-center gap-1 flex-1 transition-transform active:scale-95"
+              onClick={() => {
+                setActiveTab(tab);
+                setPanel(null);
+              }}
+              className="flex flex-col items-center justify-center flex-1 relative py-2"
             >
+              {isSelected && (
+                <div className="absolute w-12 h-12 bg-[#9AFAFA] rounded-xl -z-10 opacity-70 scale-105 transition-all" />
+              )}
               <NavIcon type={tab} active={isSelected} />
-              <span className={`text-[10px] font-bold capitalize transition-colors ${isSelected ? 'text-[#6C5DD3]' : 'text-slate-400'}`}>
-                {label}
-              </span>
             </button>
           );
         })}
