@@ -1,0 +1,67 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  pubkey    String   @unique
+  username  String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  vaults      Vault[]
+  invitations Invitation[]
+  logs        ActivityLog[]
+}
+
+model Vault {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  goalType     String
+  targetAmount Float
+  contractId   String   @unique
+  ownerPubkey  String
+  createdAt    DateTime @default(now())
+
+  owner       User          @relation(fields: [ownerPubkey], references: [pubkey])
+  invitations Invitation[]
+  logs        ActivityLog[]
+}
+
+model Invitation {
+  id            String   @id @default(cuid())
+  vaultId       String
+  invitedBy     String
+  inviteePubkey String
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+
+  vault   Vault @relation(fields: [vaultId], references: [id])
+  inviter User  @relation(fields: [invitedBy], references: [pubkey])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  pubkey    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  vaultId   String?
+  pubkey    String
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  vault Vault? @relation(fields: [vaultId], references: [id])
+  user  User   @relation(fields: [pubkey], references: [pubkey])
+}
