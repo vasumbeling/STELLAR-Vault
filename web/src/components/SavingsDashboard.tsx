@@ -752,6 +752,8 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
             copied={copied}
             onCopyAddress={handleCopyAddress}
             wallet={wallet}
+            loading={loading}
+            onRefresh={refresh}
           />
         )}
       </div>
