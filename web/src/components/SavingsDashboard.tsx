@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { fetchBalances, type Balances } from '@/lib/balances';
 import {
   contractConfigured,
   readSavingsState,
+  readVaultBalanceSummary,
   type SavingsState,
+  type VaultBalanceSummary,
 } from '@/lib/contract';
 import {
   depositUSDC,
@@ -139,11 +142,32 @@ function entryVisual(kind: string) {
   }
 }
 
+function safeNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function formatAmount(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(2) : '0.00';
+}
+
 export default function SavingsDashboard({ publicKey }: DashboardProps) {
   const configured = contractConfigured();
   const [state, setState] = useState<SavingsState | null>(null);
+  const [walletBalances, setWalletBalances] = useState<Balances | null>(null);
+  const [vaultSummary, setVaultSummary] = useState<VaultBalanceSummary | null>(null);
   const [phpRate, setPhpRate] = useState<number>(58.60);
   const [loading, setLoading] = useState<boolean>(configured);
+  const [vaultSummaryLoading, setVaultSummaryLoading] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [panel, setPanel] = useState<Panel>(null);
   const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -160,18 +184,36 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
   const [recipient, setRecipient] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
 
+  const loadVaultSummary = useCallback(async (address: string | null = publicKey) => {
+    const vaultId = process.env.NEXT_PUBLIC_VAULT_ID || process.env.NEXT_PUBLIC_CONTRACT_ID;
+    if (!configured || !vaultId) {
+      setVaultSummary(null);
+      return;
+    }
+
+    setVaultSummaryLoading(true);
+    try {
+      setVaultSummary(await readVaultBalanceSummary(vaultId, address));
+    } catch {
+      setVaultSummary(null);
+    } finally {
+      setVaultSummaryLoading(false);
+    }
+  }, [configured, publicKey]);
+
   const refresh = useCallback(async () => {
     if (!configured) return;
     setLoading(true);
     setError('');
     try {
       setState(await readSavingsState());
+      await loadVaultSummary(publicKey);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to read contract');
     } finally {
       setLoading(false);
     }
-  }, [configured]);
+  }, [configured, loadVaultSummary, publicKey]);
 
   const refreshHistory = useCallback(async (address: string | null) => {
     if (!address) {
@@ -227,6 +269,59 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
       ignore = true;
     };
   }, [publicKey]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const run = async () => {
+      if (!publicKey) {
+        if (!ignore) {
+          setWalletBalances(null);
+        }
+        return;
+      }
+
+      try {
+        const balances = await fetchBalances(publicKey);
+        if (!ignore) {
+          setWalletBalances(balances);
+        }
+      } catch {
+        if (!ignore) {
+          setWalletBalances(null);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      ignore = true;
+    };
+  }, [publicKey]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const run = async () => {
+      if (!publicKey) {
+        if (!ignore) {
+          setVaultSummary(null);
+        }
+        return;
+      }
+
+      if (!ignore) {
+        await loadVaultSummary(publicKey);
+      }
+    };
+
+    void run();
+
+    return () => {
+      ignore = true;
+    };
+  }, [loadVaultSummary, publicKey]);
 
   useEffect(() => {
     return subscribeToTransferState(() => {
@@ -372,9 +467,18 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
     );
   }
 
-  const usdcBalance = state?.saved || 0;
-  const totalEquivalentInPhp = usdcBalance * phpRate;
-  const purchasingPowerSaved = usdcBalance * (phpRate * 0.06);
+  const walletUsdcBalance = safeNumber(walletBalances?.usdc);
+  const walletXlmBalance = safeNumber(walletBalances?.xlm);
+  const stateSaved = safeNumber(state?.saved);
+  const stateTarget = safeNumber(state?.target);
+  const usdcBalance = safeNumber(vaultSummary?.balance ?? stateSaved);
+  const vaultGoal = Math.max(safeNumber(vaultSummary?.goalAmount ?? stateTarget), 1);
+  const vaultProgress = safeNumber(vaultSummary?.progress) > 0
+    ? Math.min(100, safeNumber(vaultSummary?.progress))
+    : (stateTarget > 0 ? Math.min(100, (stateSaved / stateTarget) * 100) : 0);
+  const vaultRemaining = Math.max(vaultGoal - usdcBalance, 0);
+  const totalEquivalentInPhp = walletUsdcBalance * phpRate;
+  const purchasingPowerSaved = walletUsdcBalance * (phpRate * 0.06);
   const recentPreview = history.slice(0, 3);
 
   return (
@@ -414,7 +518,7 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
 
               <div className="space-y-1 relative">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <span>Total Balance</span>
+                  <span>Available wallet USDC</span>
                   <button onClick={() => setShowBalance(!showBalance)} className="text-slate-400 hover:text-slate-600">
                     <EyeIcon className="w-4 h-4" />
                   </button>
@@ -423,11 +527,14 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
                   <h1 className="text-3xl font-black text-slate-300">Loading…</h1>
                 ) : (
                   <h1 className="text-4xl font-black text-slate-800 tracking-tight">
-                    {showBalance ? `$${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '••••••'}
+                    {showBalance ? `$${formatAmount(walletUsdcBalance)}` : '••••••'}
                   </h1>
                 )}
                 <p className="text-xs font-semibold text-slate-400 font-mono">
-                  {showBalance ? `≈ ₱${totalEquivalentInPhp.toLocaleString(undefined, { maximumFractionDigits: 2 })} PHP` : '≈ ₱••••••'}
+                  {showBalance ? `Wallet: ${formatAmount(walletUsdcBalance)} USDC • ${formatAmount(walletXlmBalance)} XLM` : 'Wallet hidden'}
+                </p>
+                <p className="text-xs font-semibold text-slate-400 font-mono">
+                  {showBalance ? `≈ ₱${formatAmount(totalEquivalentInPhp)} PHP` : '≈ ₱••••••'}
                 </p>
                 <div className="inline-flex items-center gap-1.5 mt-2 rounded-full bg-[#E1F7EE] text-[#10B981] px-3 py-1 text-[11px] font-bold">
                   <SparkleStar className="w-3 h-3" />
@@ -522,6 +629,73 @@ export default function SavingsDashboard({ publicKey }: DashboardProps) {
                   </button>
                 </div>
               )}
+            </div>
+
+            <div className="px-5 mt-8 space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-black text-slate-800 tracking-tight">Balance overview</h3>
+                <span className="text-[10px] font-black uppercase tracking-[0.24em] text-[#6C5DD3]">Live</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Wallet USDC</p>
+                  <p className="mt-2 text-2xl font-black text-slate-800">
+                    {walletBalances ? formatAmount(walletUsdcBalance) : '—'}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-400">Available for deposits</p>
+                </div>
+                <div className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Vault balance</p>
+                  <p className="mt-2 text-2xl font-black text-slate-800">
+                    {vaultSummaryLoading ? '…' : formatAmount(usdcBalance)}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-400">Saved in the vault</p>
+                </div>
+                <div className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">My contribution</p>
+                  <p className="mt-2 text-2xl font-black text-slate-800">
+                    {vaultSummaryLoading ? '…' : formatAmount(safeNumber(vaultSummary?.contribution))}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-400">Your share so far</p>
+                </div>
+                <div className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Withdrawable</p>
+                  <p className="mt-2 text-2xl font-black text-slate-800">
+                    {vaultSummaryLoading ? '…' : formatAmount(safeNumber(vaultSummary?.withdrawable))}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-400">Based on lock and goal rules</p>
+                </div>
+              </div>
+
+              <div className="rounded-4xl border border-violet-100 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Vault progress</p>
+                    <h4 className="mt-1 text-base font-black text-slate-800">{vaultSummary?.purpose || 'Savings vault'}</h4>
+                  </div>
+                  <div className="rounded-full bg-[#ECE9FF] px-2.5 py-1 text-[11px] font-black text-[#6C5DD3]">
+                    {vaultSummaryLoading ? 'Loading…' : `${vaultProgress.toFixed(0)}%`}
+                  </div>
+                </div>
+                <div className="mt-4 h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-linear-to-r from-[#6C5DD3] to-[#8F7CFF]" style={{ width: `${Math.min(100, vaultProgress)}%` }} />
+                </div>
+                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                  <span>Goal: ${formatAmount(vaultGoal)}</span>
+                  <span>Need: ${formatAmount(vaultRemaining)}</span>
+                </div>
+                {vaultSummary && (
+                  <p className="mt-3 text-[11px] font-semibold text-slate-400">
+                    {vaultSummary.status} · {vaultSummary.vaultType} · {vaultSummary.lockLabel}
+                  </p>
+                )}
+                {!vaultSummary && !vaultSummaryLoading && (
+                  <p className="mt-3 text-[11px] font-semibold text-slate-400">
+                    Add a vault id to surface on-chain vault balance, contribution, and goal progress here.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Recent Activity preview */}
