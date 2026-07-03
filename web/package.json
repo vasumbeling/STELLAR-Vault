@@ -10,6 +10,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@stellar/freighter-api": "^6.0.1",
@@ -34,10 +35,10 @@
     "typescript": "^5"
   },
   "allowScripts": {
-    "@prisma/engines@6.19.3": true,
     "prisma@6.19.3": true,
     "unrs-resolver@1.12.2": true,
     "es5-ext": false,
-    "sharp@0.34.5": true
+    "sharp@0.34.5": true,
+    "@prisma/engines@7.8.0": true
   }
 }
