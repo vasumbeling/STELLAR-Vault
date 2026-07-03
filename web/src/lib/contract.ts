@@ -1,5 +1,6 @@
 import {
   Address,
+  Asset,
   Contract,
   TransactionBuilder,
   BASE_FEE,
