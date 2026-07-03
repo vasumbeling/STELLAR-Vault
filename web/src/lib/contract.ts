@@ -8,12 +8,47 @@ import {
   nativeToScVal,
   scValToNative,
 } from '@stellar/stellar-sdk';
-import { server, NETWORK_PASSPHRASE, CONTRACT_ID } from './stellar';
+import { server, NETWORK_PASSPHRASE, CONTRACT_ID, USDC_ISSUER } from './stellar';
 
 // A real, funded testnet account used ONLY as the source for read-only
 // simulations. Nothing is signed or submitted for reads, so any existing
 // account works — we reuse the Circle USDC issuer.
 const READ_SOURCE = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+
+export async function buildCreateVaultXDR(params: CreateVaultParams): Promise<string> {
+  const { creator, purpose, vaultType, goalAmount, lockUntil = 0 } = params;
+
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(creator);
+
+  const tokenAddress = 
+    params.tokenAddress ?? new Asset('USDC', USDC_ISSUER).contractId(NETWORK_PASSPHRASE);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'create_vault',
+        nativeToScVal(Address.fromString(creator), { type: 'address' }),
+        nativeToScVal(BigInt(Math.trunc(lockUntil)), { type: 'u64' }),
+        nativeToScVal(Address.fromString(tokenAddress), { type: 'address' }),
+        nativeToScVal(purpose, { type: 'string' }),
+        nativeToScVal({ tag: vaultType, values: undefined }, { type: 'instance' }),
+        nativeToScVal(BigInt(Math.trunc(goalAmount)), { type: 'i128' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the create_vault call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}
 
 export interface SavingsState {
   saved: number;
