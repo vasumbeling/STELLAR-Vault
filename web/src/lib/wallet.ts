@@ -161,11 +161,11 @@ async function requestChallenge(pubkey: string): Promise<string> {
   return data.challenge as string;
 }
 
-async function verifyChallenge(pubkey: string, signature: string): Promise<string> {
+async function verifyChallenge(pubkey: string, signature: string, isFreighter = false): Promise<string> {
   const res = await fetch('/api/auth/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pubkey, signature }),
+    body: JSON.stringify({ pubkey, signature, isFreighter }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -211,7 +211,7 @@ async function authenticateWithFreighter(address: string): Promise<string> {
     throw new Error('Freighter did not return a signature.');
   }
 
-  return verifyChallenge(address, signature);
+  return verifyChallenge(address, signature, true);
 }
 
 /**

@@ -6,7 +6,7 @@ import ConnectWallet from '@/components/ConnectWallet';
 import FundAccount from '@/components/FundAccount';
 import AddTrustline from '@/components/AddTrustline';
 import SavingsDashboard from '@/components/SavingsDashboard';
-import { clearAccount } from '@/lib/auth/storage';
+import { hasAccount } from '@/lib/auth/storage';
 
 /* ---------- Pure Inline Decorative Icons ---------- */
 function ShieldIcon({ className = '' }) {
@@ -35,34 +35,36 @@ export default function Home() {
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
 // ── Auth gate ──────────────────────────────────────────────
-useEffect(() => {
-  // Wait until the wallet hook has finished hydrating/restoring
-  if (!wallet.initialized && wallet.status !== 'ready') {
-    return;
-  }
+  useEffect(() => {
+    if (!hasAccount()) {
+      router.replace('/register');
+      return;
+    }
 
-  // Make sure a local account exists
-  const account = localStorage.getItem('stella_vault_account');
-  if (!account) {
-    router.replace('/register');
-    return;
-  }
+    if (wallet.initialized || wallet.status === 'ready') {
+      if (!wallet.publicKey || !wallet.signerAvailable) {
+        router.replace('/login');
+      } else {
+        setAuthChecked(true);
+      }
+      return;
+    }
 
-  // If the wallet isn't unlocked, go to login
-  if (!wallet.publicKey || !wallet.signerAvailable) {
-    router.replace('/login');
-    return;
-  }
+    // Safety net: if wallet never finishes hydrating within 3s, don't hang forever
+    const timeout = setTimeout(() => {
+      if (!wallet.publicKey || !wallet.signerAvailable) {
+        router.replace('/login');
+      }
+    }, 100);
 
-  // Everything is good
-  setAuthChecked(true);
-}, [
-  wallet.initialized,
-  wallet.status,
-  wallet.publicKey,
-  wallet.signerAvailable,
-  router,
-]);
+    return () => clearTimeout(timeout);
+  }, [
+    wallet.initialized,
+    wallet.status,
+    wallet.publicKey,
+    wallet.signerAvailable,
+    router,
+  ]);
 
   const handleLogout = useCallback(async () => {
     await disconnect();                              // clears 'stella-vault.wallet'
