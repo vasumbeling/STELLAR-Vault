@@ -173,6 +173,22 @@ async function verifyChallenge(pubkey: string, signature: string): Promise<strin
   }
   return data.token as string;
 }
+/**
+ * Ensures a User row exists in the backend for this pubkey.
+ * Safe to call on every successful auth (register or login) — upserts.
+ */
+async function ensureUserExists(pubkey: string, username?: string): Promise<void> {
+  try {
+    await authFetch('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ pubkey, ...(username && { username }) }),
+    });
+  } catch (error) {
+    // Don't block login/registration if this fails — log it, but the
+    // JWT is still valid. Worth surfacing during testing though.
+    console.error('Failed to sync user record with backend:', error);
+  }
+}
 
 /** Authenticate using a raw secret key (PIN-account path). Returns the JWT. */
 async function authenticateWithSecretKey(secretKey: string): Promise<string> {
@@ -372,6 +388,13 @@ async function connectWallet(): Promise<void> {
     currentSnapshot = nextSnapshot;
     persistSnapshot(nextSnapshot);
     emit();
+
+    currentSnapshot = nextSnapshot;
+    persistSnapshot(nextSnapshot);
+    emit();
+
+    await ensureUserExists(address); // NEW
+
   } catch (error) {
     clearStoredSnapshot();
     setSnapshot({
@@ -453,6 +476,14 @@ export async function createPinAccount(pin: string): Promise<string> {
     persistSnapshot(nextSnapshot);
     emit();
 
+    currentSnapshot = nextSnapshot;
+    persistSnapshot(nextSnapshot);
+    emit();
+
+    await ensureUserExists(publicKey); // NEW
+
+    return publicKey;
+
     return publicKey; // FIX: caller (CreateAccount.tsx) needs this back
   } catch (error) {
     clearStoredSnapshot();
@@ -502,6 +533,13 @@ export async function unlockPinAccount(pin: string): Promise<void> {
     currentSnapshot = nextSnapshot;
     persistSnapshot(nextSnapshot);
     emit();
+
+    currentSnapshot = nextSnapshot;
+    persistSnapshot(nextSnapshot);
+    emit();
+
+    await ensureUserExists(stored.publicKey); // NEW
+
   } catch (error) {
     setSnapshot({
       status: 'error',

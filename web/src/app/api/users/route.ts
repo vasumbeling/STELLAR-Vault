@@ -11,12 +11,25 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json()
 
-  const user = await prisma.user.create({
-    data: {
+  if (!body.pubkey) {
+    return Response.json({ error: "pubkey is required" }, { status: 400 })
+  }
+
+  // Upsert instead of create: safe to call on every successful login,
+  // not just first-time registration. Won't throw on an existing pubkey.
+  const user = await prisma.user.upsert({
+    where: { pubkey: body.pubkey },
+    update: {
+      // Only overwrite these if actually provided, so a plain login
+      // doesn't wipe out a username/avatar set during registration.
+      ...(body.username !== undefined && { username: body.username }),
+      ...(body.avatarUrl !== undefined && { avatarUrl: body.avatarUrl }),
+    },
+    create: {
       pubkey: body.pubkey,
       username: body.username,
       avatarUrl: body.avatarUrl,
-    }
+    },
   })
 
   return Response.json(user, { status: 201 })
