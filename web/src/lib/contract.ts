@@ -8,6 +8,7 @@ import {
   rpc,
   nativeToScVal,
   scValToNative,
+  xdr,
 } from '@stellar/stellar-sdk';
 import { server, NETWORK_PASSPHRASE, CONTRACT_ID, USDC_ISSUER } from './stellar';
 
@@ -45,7 +46,7 @@ export async function buildCreateVaultXDR(params: CreateVaultParams): Promise<st
         nativeToScVal(BigInt(Math.trunc(lockUntil)), { type: 'u64' }),
         nativeToScVal(Address.fromString(tokenAddress), { type: 'address' }),
         nativeToScVal(purpose, { type: 'string' }),
-        nativeToScVal({ tag: vaultType, values: undefined }, { type: 'map' }),
+        xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(vaultType)]),
         nativeToScVal(BigInt(Math.trunc(goalAmount)), { type: 'i128' }),
       ),
     )
