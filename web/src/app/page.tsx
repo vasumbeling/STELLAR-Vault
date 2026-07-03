@@ -1,6 +1,7 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@/hooks/useWallet';
+import { useRouter } from 'next/navigation';
 import ConnectWallet from '@/components/ConnectWallet';
 import FundAccount from '@/components/FundAccount';
 import AddTrustline from '@/components/AddTrustline';
@@ -26,9 +27,20 @@ function SparkleStar({ className = '' }) {
 
 export default function Home() {
   const wallet = useWallet();
-  const { publicKey, connecting, status, network, provider, signerAvailable, error } = wallet;
+  const { publicKey, connecting, status, network, provider, signerAvailable, error, isInitializing } = wallet;
+  const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => {
+    if (!isInitializing && !publicKey) {
+      router.replace('/login');
+    }
+  }, [isInitializing, publicKey, router]);
+
+  if (isInitializing || !publicKey) {
+    return null; // or a loading spinner, avoids flashing the dashboard before redirect
+  }
 
   return (
     <main className="min-h-screen w-full bg-[#FAF6F0] text-slate-800 antialiased selection:bg-[#6C5DD3]/10">
