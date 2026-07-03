@@ -6,7 +6,9 @@ import { server, NETWORK_PASSPHRASE, USDC_ISSUER } from './stellar';
  * A trustline is REQUIRED before an account can receive any non-native asset.
  */
 export async function buildAddUsdcTrustlineXDR(account: string): Promise<string> {
-  if (!USDC_ISSUER) throw new Error('USDC issuer is not configured (.env.local)');
+  if (!USDC_ISSUER) {
+    throw new Error('USDC issuer is not configured. Please reload the app or set NEXT_PUBLIC_USDC_ISSUER.');
+  }
 
   const usdc = new Asset('USDC', USDC_ISSUER);
   const acct = await server.getAccount(account);
