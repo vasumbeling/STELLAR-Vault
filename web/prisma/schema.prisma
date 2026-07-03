@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -25,13 +24,23 @@ model Vault {
   description  String?
   goalType     String
   targetAmount Float
-  contractId   String   @unique
   ownerPubkey  String
   createdAt    DateTime @default(now())
+
+  // --- On-chain fields (added to match the Soroban contract) ---
+  contractAddress String    // the single deployed VaultContract's address (shared across many vaults)
+  onChainVaultId   BigInt    // the u64 vault_id returned by the contract's create_vault call
+  vaultType        String    // "Personal" | "Collaborative" — mirrors the contract's VaultType enum
+  balance          Float     @default(0)         // mirrors the contract's on-chain balance
+  status           String    @default("Active")  // "Active" | "GoalReached" | "Closed"
+  lockUntil        DateTime? // null = no lock, matches contract's lock_until of 0
 
   owner       User          @relation(fields: [ownerPubkey], references: [pubkey])
   invitations Invitation[]
   logs        ActivityLog[]
+
+  // A given contract can only have one vault with a given on-chain ID
+  @@unique([contractAddress, onChainVaultId])
 }
 
 model Invitation {
