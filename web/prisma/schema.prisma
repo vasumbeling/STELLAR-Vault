@@ -87,3 +87,9 @@ model ActivityLog {
   vault Vault? @relation(fields: [vaultId], references: [id])
   user  User   @relation(fields: [pubkey], references: [pubkey])
 }
+
+model Challenge {
+  pubkey     String   @id
+  challenge  String
+  expiresAt  DateTime
+}

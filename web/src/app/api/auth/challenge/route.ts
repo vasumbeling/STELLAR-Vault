@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const randomPart = randomBytes(16).toString("hex")
   const challenge = `STELLA Vault auth challenge: ${randomPart}`
 
-  saveChallenge(pubkey, challenge)
+  await saveChallenge(pubkey, challenge)
 
   return Response.json({ challenge })
 }

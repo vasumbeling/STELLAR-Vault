@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const challenge = getChallenge(pubkey)
+  const challenge = await getChallenge(pubkey)
 
   if (!challenge) {
     return Response.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Signature does not match" }, { status: 401 })
   }
 
-  clearChallenge(pubkey)
+  await clearChallenge(pubkey)
 
   const token = jwt.sign(
     { pubkey },
