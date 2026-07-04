@@ -732,9 +732,8 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                     )}
                   </div>
                 )}
-              </div>
-               {/* CREATE VAULT CONTAINER */}
-              {panel === 'create' && (
+              {/* CREATE VAULT CONTAINER */}
+                {panel === 'create' && (
                   <CreateVault
                     publicKey={publicKey}
                     onSuccess={() => {
@@ -744,9 +743,10 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                     }}
                   />
                 )}
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </>
+        )}
 
         {/* === ALL ACTIVITY LEDGER === */}
         {activeTab === 'activity' && (
