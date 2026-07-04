@@ -33,7 +33,14 @@ export async function buildCreateVaultXDR(params: CreateVaultParams): Promise<st
   const account = await server.getAccount(creator);
 
   const tokenAddress = params.tokenAddress ?? USDC_CONTRACT_ID;
-
+    console.log('buildCreateVaultXDR params:', {
+    creator,
+    tokenAddress,
+    purpose,
+    vaultType,
+    goalAmount,
+    lockUntil,
+  });
   const tx = new TransactionBuilder(account, {
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
