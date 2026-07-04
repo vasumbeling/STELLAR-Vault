@@ -215,12 +215,11 @@ export default function RegisterPage() {
       <header className="mb-6 px-1">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-xl bg-[#B8FCFC]/40 border border-dashed border-[#B8FCFC] flex items-center justify-center overflow-hidden shrink-0">
-            {/* TODO: replace with your logo image */}
             <img src="stellamascot.png" alt="STELLA Vault" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-xl font-black text-slate-800 tracking-tight">STELLA Vault</h1>
         </div>
-        
+
         {/* Step progress dots */}
         {step !== 'intro' && step !== 'done' && (
           <div className="flex gap-1.5 mt-5">

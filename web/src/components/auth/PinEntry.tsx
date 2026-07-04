@@ -94,7 +94,6 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-1">
-        <div className="text-3xl">🏦</div>
         <h2 className="text-xl font-semibold text-gray-900">Welcome back</h2>
         <p className="text-sm text-gray-500">Enter your PIN to unlock your vault</p>
       </div>
@@ -110,7 +109,7 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
               i < pin.length
                 ? error
                   ? 'bg-red-500 border-red-500'
-                  : 'bg-blue-600 border-blue-600'
+                  : 'bg-[#FF5E00] border-[#FF5E00]'
                 : locked
                 ? 'border-gray-200 bg-gray-50'
                 : 'border-gray-300'
@@ -132,7 +131,7 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
       ) : error ? (
         <p className="text-red-500 text-sm text-center">{error}</p>
       ) : loading ? (
-        <p className="text-blue-500 text-sm text-center">Unlocking vault…</p>
+        <p className="text-[#0891A0] text-sm text-center">Unlocking vault…</p>
       ) : null}
 
       {/* Numpad */}
@@ -151,8 +150,8 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
                 : locked || loading
                 ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                 : key === '⌫'
-                ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                ? 'bg-[#B8FCFC] text-[#065666] hover:bg-[#9EF5F5]'
+                : 'bg-[#B8FCFC]/40 text-gray-800 hover:bg-[#B8FCFC]'
             }`}
           >
             {key}
@@ -164,7 +163,7 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
       {onForgotPin && (
         <button
           onClick={onForgotPin}
-          className="w-full text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors"
+          className="w-full text-sm text-gray-400 hover:text-[#FF5E00] py-2 transition-colors"
         >
           Forgot PIN? Recover with phrase
         </button>
