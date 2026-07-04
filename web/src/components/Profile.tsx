@@ -6,10 +6,12 @@ import Image from 'next/image';
 interface ProfileProps {
   publicKey: string | null;
   phpRate: number;
+  purchasingPowerSaved: number;
   copied: boolean;
   onCopyAddress: () => void;
   loading: boolean;
   onRefresh: () => void;
+  onLogout: () => void;
   wallet: {
     status?: string;
     network?: string;
@@ -35,13 +37,25 @@ function ChevronDownIcon({ className = '' }) {
   );
 }
 
+function LogoutIcon({ className = '' }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </svg>
+  );
+}
+
 export default function Profile({ 
   publicKey, 
   phpRate, 
+  purchasingPowerSaved,
   copied, 
   onCopyAddress, 
   loading, 
   onRefresh, 
+  onLogout,
   wallet 
 }: ProfileProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -173,11 +187,30 @@ export default function Profile({
               {copied ? 'Copied!' : 'Copy'}
             </span>
           </button>
+
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-between bg-rose-50 hover:bg-rose-100/80 border border-rose-100/60 p-4 rounded-2xl transition-colors cursor-pointer"
+          >
+            <span className="text-xs font-bold text-rose-600 flex items-center gap-2">
+              <LogoutIcon className="h-3.5 w-3.5" />
+              Log Out
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-600">
+              Disconnect
+            </span>
+          </button>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500 px-1">
-          <span className="font-semibold">Conversion Rate:</span>
-          <span className="font-bold text-slate-700">1 USDC ≈ ₱{phpRate.toFixed(2)} PHP</span>
+        <div className="pt-3 border-t border-slate-100 space-y-1.5 px-1">
+          <div className="flex justify-between items-center text-[11px] text-slate-500">
+            <span className="font-semibold">Conversion Rate:</span>
+            <span className="font-bold text-slate-700">1 USDC ≈ ₱{phpRate.toFixed(2)} PHP</span>
+          </div>
+          <div className="flex justify-between items-center text-[11px] text-slate-500">
+            <span className="font-semibold">Purchasing Power Defended:</span>
+            <span className="font-bold text-emerald-600">+₱{purchasingPowerSaved.toLocaleString(undefined, { maximumFractionDigits: 2 })} Saved</span>
+          </div>
         </div>
       </div>
 

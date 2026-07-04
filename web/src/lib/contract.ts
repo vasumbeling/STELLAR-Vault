@@ -1,5 +1,6 @@
 import {
   Address,
+  Asset,
   Contract,
   TransactionBuilder,
   BASE_FEE,
@@ -7,8 +8,9 @@ import {
   rpc,
   nativeToScVal,
   scValToNative,
+  xdr,
 } from '@stellar/stellar-sdk';
-import { server, NETWORK_PASSPHRASE, CONTRACT_ID, USDC_ISSUER } from './stellar';
+import { server, NETWORK_PASSPHRASE, CONTRACT_ID, USDC_ISSUER, USDC_CONTRACT_ID } from './stellar';
 
 // A real, funded testnet account used ONLY as the source for read-only
 // simulations. Nothing is signed or submitted for reads, so any existing
@@ -26,13 +28,19 @@ export interface CreateVaultParams {
 
 export async function buildCreateVaultXDR(params: CreateVaultParams): Promise<string> {
   const { creator, purpose, vaultType, goalAmount, lockUntil = 0 } = params;
-
+  
   const contract = new Contract(CONTRACT_ID);
   const account = await server.getAccount(creator);
 
-  const tokenAddress = 
-    params.tokenAddress ?? new Asset('USDC', USDC_ISSUER).contractId(NETWORK_PASSPHRASE);
-
+  const tokenAddress = params.tokenAddress ?? USDC_CONTRACT_ID;
+    console.log('buildCreateVaultXDR params:', {
+    creator,
+    tokenAddress,
+    purpose,
+    vaultType,
+    goalAmount,
+    lockUntil,
+  });
   const tx = new TransactionBuilder(account, {
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
@@ -44,7 +52,7 @@ export async function buildCreateVaultXDR(params: CreateVaultParams): Promise<st
         nativeToScVal(BigInt(Math.trunc(lockUntil)), { type: 'u64' }),
         nativeToScVal(Address.fromString(tokenAddress), { type: 'address' }),
         nativeToScVal(purpose, { type: 'string' }),
-        nativeToScVal({ tag: vaultType, values: undefined }, { type: 'instance' }),
+        xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(vaultType)]),
         nativeToScVal(BigInt(Math.trunc(goalAmount)), { type: 'i128' }),
       ),
     )

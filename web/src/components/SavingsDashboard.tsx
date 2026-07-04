@@ -27,6 +27,7 @@ import { loadHistory, type HistoryEntry } from '@/lib/history';
 import Wheel from './Wheel';
 import History from './History';
 import Profile from './Profile';
+import CreateVault from './vault/CreateVault';
 
 interface WalletContextProps {
   publicKey: string | null;
@@ -36,6 +37,7 @@ interface WalletContextProps {
   provider: string;
   signerAvailable: boolean;
   error: string | null;
+  disconnect?: () => void;
 }
 
 interface DashboardProps {
@@ -43,7 +45,7 @@ interface DashboardProps {
   wallet: WalletContextProps; 
 }
 
-type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | null;
+type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | 'create' | null;
 type Tab = 'home' | 'activity' | 'profile';
 
 /* ---------- SVG Icon Toolkit ---------- */
@@ -119,6 +121,31 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
   // Sub-mode selectors for Options (Amount Input vs QR)
   const [sendMode, setSendMode] = useState<'amount' | 'qr'>('amount');
   const [receiveMode, setReceiveMode] = useState<'address' | 'qr'>('address');
+
+  const safeNumber = (v: unknown): number => {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+  };
+
+  const onLogout = useCallback(() => {
+    wallet.disconnect?.();
+  }, [wallet]);
+
+  const loadVaultSummary = useCallback(async (key: string | null) => {
+    if (!key) {
+      setVaultSummary(null);
+      return;
+    }
+    setVaultSummaryLoading(true);
+    try {
+      const summary = await readVaultBalanceSummary(key);
+      setVaultSummary(summary);
+    } catch {
+      setVaultSummary(null);
+    } finally {
+      setVaultSummaryLoading(false);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!configured) return;
@@ -454,6 +481,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
               />
             </div>
 
+            
             {/* Slide Inline Configuration Panels */}
             {panel && (
               <div className="mx-4 mt-2 p-5 bg-white rounded-3xl border border-slate-100 shadow-md space-y-4">
@@ -704,6 +732,17 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                     )}
                   </div>
                 )}
+              {/* CREATE VAULT CONTAINER */}
+                {panel === 'create' && publicKey && (
+                  <CreateVault
+                    publicKey={publicKey}
+                    onCreated={() => {
+                      setPanel(null);
+                      setMsg('Vault created successfully!');
+                      void refresh();
+                    }}
+                  />
+                )}
               </div>
             )}
           </>
@@ -724,8 +763,12 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
             publicKey={publicKey}
             phpRate={phpRate}
             copied={copied}
+            purchasingPowerSaved={purchasingPowerSaved}
             onCopyAddress={handleCopyAddress}
             wallet={wallet}
+            loading={loading}
+            onRefresh={refresh}
+            onLogout={handleLogout}
           />
         )}
       </div>
