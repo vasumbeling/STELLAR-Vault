@@ -45,7 +45,7 @@ interface DashboardProps {
   wallet: WalletContextProps; 
 }
 
-type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | null;
+type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | 'create' | null;
 type Tab = 'home' | 'activity' | 'profile';
 
 /* ---------- SVG Icon Toolkit ---------- */
@@ -482,38 +482,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
               />
             </div>
 
-            {/* Create Vault */}
-            <div className="mx-4 mt-4">
-              {!showCreateVault ? (
-                <button
-                  onClick={() => setShowCreateVault(true)}
-                  className="w-full py-3 rounded-2xl border border-dashed border-orange-300 text-[#FF5E00] text-xs font-black uppercase tracking-widest bg-orange-50/50 hover:bg-orange-50 transition-colors"
-                >
-                  + Create New Vault
-                </button>
-              ) : (
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-5">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">New Vault</h3>
-                    <button
-                      onClick={() => setShowCreateVault(false)}
-                      className="text-slate-400 text-xs font-bold hover:text-slate-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <CreateVault
-                    publicKey={publicKey}
-                    onSuccess={() => {
-                      setShowCreateVault(false);
-                      setMsg('Vault created successfully!');
-                      void refresh();
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
+            
             {/* Slide Inline Configuration Panels */}
             {panel && (
               <div className="mx-4 mt-2 p-5 bg-white rounded-3xl border border-slate-100 shadow-md space-y-4">
@@ -765,6 +734,48 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                   </div>
                 )}
               </div>
+              {/* Create Vault */}
+            <div className="mx-4 mt-4">
+              {!showCreateVault ? (
+                <button
+                  onClick={() => setShowCreateVault(true)}
+                  className="w-full py-3 rounded-2xl border border-dashed border-orange-300 text-[#FF5E00] text-xs font-black uppercase tracking-widest bg-orange-50/50 hover:bg-orange-50 transition-colors"
+                >
+                  + Create New Vault
+                </button>
+              ) : (
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-5">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">New Vault</h3>
+                    <button
+                      onClick={() => setShowCreateVault(false)}
+                      className="text-slate-400 text-xs font-bold hover:text-slate-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <CreateVault
+                    publicKey={publicKey}
+                    onSuccess={() => {
+                      setShowCreateVault(false);
+                      setMsg('Vault created successfully!');
+                      void refresh();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+             {/* CREATE VAULT CONTAINER */}
+            {panel === 'create' && (
+                <CreateVault
+                  publicKey={publicKey}
+                  onSuccess={() => {
+                    setPanel(null);
+                    setMsg('Vault created successfully!');
+                    void refresh();
+                  }}
+                />
+              )}
             )}
           </>
         )}
