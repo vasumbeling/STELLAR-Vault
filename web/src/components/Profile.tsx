@@ -6,6 +6,7 @@ import Image from 'next/image';
 interface ProfileProps {
   publicKey: string | null;
   phpRate: number;
+  purchasingPowerSaved: number;
   copied: boolean;
   onCopyAddress: () => void;
   loading: boolean;
@@ -38,6 +39,7 @@ function ChevronDownIcon({ className = '' }) {
 export default function Profile({ 
   publicKey, 
   phpRate, 
+  purchasingPowerSaved,
   copied, 
   onCopyAddress, 
   loading, 
@@ -175,9 +177,15 @@ export default function Profile({
           </button>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500 px-1">
-          <span className="font-semibold">Conversion Rate:</span>
-          <span className="font-bold text-slate-700">1 USDC ≈ ₱{phpRate.toFixed(2)} PHP</span>
+        <div className="pt-3 border-t border-slate-100 space-y-1.5 px-1">
+          <div className="flex justify-between items-center text-[11px] text-slate-500">
+            <span className="font-semibold">Conversion Rate:</span>
+            <span className="font-bold text-slate-700">1 USDC ≈ ₱{phpRate.toFixed(2)} PHP</span>
+          </div>
+          <div className="flex justify-between items-center text-[11px] text-slate-500">
+            <span className="font-semibold">Purchasing Power Defended:</span>
+            <span className="font-bold text-emerald-600">+₱{purchasingPowerSaved.toLocaleString(undefined, { maximumFractionDigits: 2 })} Saved</span>
+          </div>
         </div>
       </div>
 

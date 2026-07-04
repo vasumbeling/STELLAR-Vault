@@ -763,6 +763,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
             publicKey={publicKey}
             phpRate={phpRate}
             copied={copied}
+            purchasingPowerSaved={purchasingPowerSaved}
             onCopyAddress={handleCopyAddress}
             wallet={wallet}
             loading={loading}
