@@ -736,7 +736,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                 {panel === 'create' && publicKey && (
                   <CreateVault
                     publicKey={publicKey}
-                    onSuccess={() => {
+                    onCreated={() => {
                       setPanel(null);
                       setMsg('Vault created successfully!');
                       void refresh();
