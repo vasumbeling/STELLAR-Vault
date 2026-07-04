@@ -733,7 +733,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                   </div>
                 )}
               {/* CREATE VAULT CONTAINER */}
-                {panel === 'create' && (
+                {panel === 'create' && publicKey && (
                   <CreateVault
                     publicKey={publicKey}
                     onSuccess={() => {
