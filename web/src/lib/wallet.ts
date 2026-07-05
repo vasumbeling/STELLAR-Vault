@@ -1,8 +1,9 @@
 // lib/wallet.ts
 
-import { generateKeypair, keypairFromSecret, fundTestnetAccount } from '@/lib/stellar';
+import { generateKeypair, keypairFromSecret, fundTestnetAccount, NETWORK_PASSPHRASE } from '@/lib/stellar';
 import { encryptSecretKey, decryptSecretKey } from '@/lib/auth/encryption';
 import { saveAccount, loadAccount } from '@/lib/auth/storage';
+import { TransactionBuilder } from '@stellar/stellar-sdk';
 
 export type WalletStatus =
   | 'disconnected'
@@ -45,6 +46,10 @@ const defaultSnapshot: WalletSnapshot = {
 };
 
 let currentSnapshot: WalletSnapshot = { ...defaultSnapshot };
+// Kept in memory ONLY — never persisted to localStorage. Cleared on disconnect.
+// Lets other components (e.g. CreateVault) sign transactions with the active
+// PIN account without re-prompting for the PIN on every action.
+let currentSecretKey: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -252,6 +257,39 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
 
   return res;
 }
+/**
+ * Signs an XDR transaction using whichever signer is actually active —
+ * the in-memory PIN account secret key, or Freighter — instead of assuming
+ * Freighter unconditionally. Fixes a bug where PIN-account users' transactions
+ * were being (incorrectly) signed by a completely different Freighter account.
+ */
+export async function signWithCurrentAccount(xdr: string): Promise<string> {
+  if (currentSnapshot.provider === 'passkey') {
+    if (!currentSecretKey) {
+      throw new Error('Your session key is unavailable. Please unlock your account again.');
+    }
+    const keypair = keypairFromSecret(currentSecretKey);
+    const tx = TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
+    tx.sign(keypair);
+    return tx.toXDR();
+  }
+
+  if (currentSnapshot.provider === 'freighter') {
+    const freighter = await import('@stellar/freighter-api');
+    const signed = await freighter.signTransaction(xdr, {
+      networkPassphrase: NETWORK_PASSPHRASE,
+      address: currentSnapshot.address ?? undefined,
+    });
+    if (signed.error) {
+      throw new Error(
+        typeof signed.error === 'string' ? signed.error : 'Signing was rejected',
+      );
+    }
+    return signed.signedTxXdr;
+  }
+
+  throw new Error('No wallet is connected. Please log in and try again.');
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -418,6 +456,7 @@ async function disconnectWallet(): Promise<void> {
   }
 
   setSnapshot({ status: 'disconnecting', error: null });
+  currentSecretKey = null;
   clearStoredSnapshot();
   currentSnapshot = { ...defaultSnapshot };
   emit();
@@ -448,6 +487,7 @@ export async function createPinAccount(pin: string): Promise<string> {
 
   try {
     const { publicKey, secretKey } = generateKeypair();
+    currentSecretKey = secretKey;
     const encryptedData = await encryptSecretKey(secretKey, pin);
 
     // Save encrypted keypair locally
@@ -513,6 +553,7 @@ export async function unlockPinAccount(pin: string): Promise<void> {
 
     // This throws 'Incorrect PIN' if pin is wrong
     const secretKey = await decryptSecretKey(stored, pin);
+    currentSecretKey = secretKey;
 
     // NEW — authenticate with the backend using the decrypted secret key.
     const token = await authenticateWithSecretKey(secretKey);

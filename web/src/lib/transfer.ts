@@ -2,8 +2,7 @@ import { StrKey } from '@stellar/stellar-sdk';
 import { fetchBalances } from './balances';
 import { buildContributeXDR, buildWithdrawXDR } from './contract';
 import { buildPaymentXDR, pollTransaction, submitSignedXDR } from './payment';
-import { NETWORK_PASSPHRASE } from './stellar';
-import { walletService } from './wallet';
+import { walletService, signWithCurrentAccount } from './wallet';
 import { recordHistoryEntry } from './history';
 
 export type TransferOperation = 'deposit' | 'withdraw' | 'transfer';
@@ -206,24 +205,8 @@ async function validateWalletAndBalance(amount: number, operation: TransferOpera
   return wallet.publicKey;
 }
 
-async function signXdr(xdr: string, address: string): Promise<string> {
-  const freighter = await import('@stellar/freighter-api');
-  const signed = await freighter.signTransaction(xdr, {
-    networkPassphrase: NETWORK_PASSPHRASE,
-    address,
-  });
-
-  if (signed?.error) {
-    throw new Error(
-      typeof signed.error === 'string' ? signed.error : 'The signature request was rejected.',
-    );
-  }
-
-  if (!signed?.signedTxXdr) {
-    throw new Error('The wallet did not return a signed transaction.');
-  }
-
-  return signed.signedTxXdr;
+async function signXdr(xdr: string): Promise<string> {
+  return signWithCurrentAccount(xdr);
 }
 
 async function submitAndConfirm(signedXdr: string): Promise<string> {
@@ -268,7 +251,7 @@ async function runTransfer(
     }
 
     setState({ status: 'waiting_for_signature', message: 'Waiting for wallet approval…' });
-    const signedXdr = await signXdr(xdr, sender);
+    const signedXdr = await signXdr(xdr);
     const hash = await submitAndConfirm(signedXdr);
 
     const result: TransferResult = {

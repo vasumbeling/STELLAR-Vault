@@ -204,44 +204,41 @@ export default function RegisterPage() {
   const STEP_ORDER: OnboardStep[] = ['pin', 'profile', 'otp'];
 
   return (
-    <main className="min-h-screen w-full bg-[#FAF6F0] text-slate-800 antialiased selection:bg-[#6C5DD3]/10 flex items-center justify-center py-8 px-4">
+    <main className="min-h-screen w-full bg-[#FAF8F5] text-slate-800 antialiased selection:bg-[#FF5E00]/10 flex items-center justify-center py-8 px-4">
 
       {/* Phone frame container — matches live dashboard DOM */}
-      <div className="w-full max-w-md min-h-[880px] bg-[#F9F8FE] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col justify-between font-sans border border-slate-100/80">
+      <div className="w-full max-w-md min-h-[880px] bg-[#FAF8F5] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col justify-between font-sans border border-slate-100/80">
 
       <div className="flex-1 overflow-y-auto px-4 py-12">
 
         {/* Core Header Section */}
-        <header className="mb-6 px-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-[#6C5DD3] rounded-xl text-white">
-              <SparkleStar className="h-4 w-4" />
-            </div>
-            <h1 className="text-xl font-black text-slate-800 tracking-tight">STELLA Vault</h1>
+      <header className="mb-6 px-1">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-[#B8FCFC]/40 border border-dashed border-[#B8FCFC] flex items-center justify-center overflow-hidden shrink-0">
+            <img src="stellamascot.png" alt="STELLA Vault" className="w-full h-full object-cover" />
           </div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-            Soroban Engine · Smart Testnet
-          </p>
+          <h1 className="text-xl font-black text-slate-800 tracking-tight">STELLA Vault</h1>
+        </div>
 
-          {/* Step progress dots */}
-          {step !== 'intro' && step !== 'done' && (
-            <div className="flex gap-1.5 mt-5">
-              {STEP_ORDER.map((s, i) => (
-                <div
-                  key={s}
-                  className={`h-1 flex-1 rounded-full transition-all ${
-                    STEP_ORDER.indexOf(step) >= i ? 'bg-[#6C5DD3]' : 'bg-violet-100'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </header>
+        {/* Step progress dots */}
+        {step !== 'intro' && step !== 'done' && (
+          <div className="flex gap-1.5 mt-5">
+            {STEP_ORDER.map((s, i) => (
+              <div
+                key={s}
+                className={`h-1 flex-1 rounded-full transition-all ${
+                  STEP_ORDER.indexOf(step) >= i ? 'bg-[#FF5E00]' : 'bg-[#B8FCFC]'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </header>
 
         {/* Intro */}
         {step === 'intro' && (
           <div className="space-y-5">
-            <section className="rounded-4xl border border-violet-100/50 bg-white p-6 shadow-xl shadow-indigo-900/5">
+            <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
               <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-tight">
                 Save together,<br />grow together
               </h2>
@@ -260,9 +257,9 @@ export default function RegisterPage() {
               ].map(({ Icon, title, desc }) => (
                 <div
                   key={title}
-                  className="flex items-start gap-3 rounded-4xl border border-violet-100/50 bg-white p-4 shadow-xl shadow-indigo-900/5"
+                  className="flex items-start gap-3 rounded-4xl border border-[#B8FCFC]/60 bg-white p-4 shadow-xl shadow-slate-900/5"
                 >
-                  <div className="p-1.5 bg-indigo-50 rounded-xl text-[#6C5DD3] shrink-0">
+                  <div className="p-1.5 bg-[#B8FCFC]/40 rounded-xl text-[#FF5E00] shrink-0">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
@@ -275,7 +272,7 @@ export default function RegisterPage() {
 
             <button
               onClick={() => setStep('pin')}
-              className="w-full bg-[#6C5DD3] text-white rounded-2xl py-4 text-sm font-black tracking-tight hover:bg-[#5B4FBF] transition-colors"
+              className="w-full bg-[#FF5E00] text-white rounded-2xl py-4 text-sm font-black tracking-tight hover:bg-[#E05400] transition-colors"
             >
               Create my vault
             </button>
@@ -284,7 +281,7 @@ export default function RegisterPage() {
               Already have a vault?{' '}
               <button
                 onClick={() => router.push('/login')}
-                className="font-black text-[#6C5DD3] hover:underline"
+                className="font-black text-[#FF5E00] hover:underline"
               >
                 Log in
               </button>
@@ -294,7 +291,7 @@ export default function RegisterPage() {
 
         {/* PIN + Recovery */}
         {step === 'pin' && (
-          <section className="rounded-4xl border border-violet-100/50 bg-white p-6 shadow-xl shadow-indigo-900/5">
+          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
             <CreateAccount
               onComplete={handleAccountCreated}
               onBack={() => setStep('intro')}
@@ -305,14 +302,14 @@ export default function RegisterPage() {
         {/* Profile */}
         {step === 'profile' && (
           <div className="space-y-5">
-            <section className="rounded-4xl border border-violet-100/50 bg-white p-6 shadow-xl shadow-indigo-900/5 space-y-6">
+            <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5 space-y-6">
               <div className="text-center space-y-1">
                 {/* Optional profile picture */}
                 <div className="relative mx-auto mb-1 w-16 h-16">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-16 h-16 rounded-2xl bg-indigo-50 text-[#6C5DD3] flex items-center justify-center overflow-hidden border border-violet-100"
+                    className="w-16 h-16 rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00] flex items-center justify-center overflow-hidden border border-[#B8FCFC]"
                   >
                     {profilePicture ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -344,7 +341,7 @@ export default function RegisterPage() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     maxLength={30}
-                    className="w-full border border-violet-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/30 focus:border-[#6C5DD3]"
+                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
                   />
                 </div>
 
@@ -355,7 +352,7 @@ export default function RegisterPage() {
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full border border-violet-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/30 focus:border-[#6C5DD3]"
+                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
                   >
                     {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
@@ -366,7 +363,7 @@ export default function RegisterPage() {
                     Phone number * <span className="normal-case text-slate-300">(we&apos;ll text you a code)</span>
                   </label>
                   <div className="flex gap-2">
-                    <span className="border border-violet-100 rounded-xl px-3 py-3 text-sm font-medium bg-indigo-50/60 text-slate-600">
+                    <span className="border border-[#B8FCFC] rounded-xl px-3 py-3 text-sm font-medium bg-[#B8FCFC]/30 text-slate-600">
                       🇵🇭 +63
                     </span>
                     <input
@@ -375,7 +372,7 @@ export default function RegisterPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                       maxLength={10}
-                      className="flex-1 border border-violet-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/30 focus:border-[#6C5DD3]"
+                      className="flex-1 border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
                     />
                   </div>
                 </div>
@@ -389,7 +386,7 @@ export default function RegisterPage() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-violet-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/30 focus:border-[#6C5DD3]"
+                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
                   />
                 </div>
 
@@ -403,15 +400,15 @@ export default function RegisterPage() {
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                     maxLength={12}
-                    className="w-full border border-violet-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6C5DD3]/30 focus:border-[#6C5DD3]"
+                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
                   />
                 </div>
               </div>
 
               {/* Level 0 restrictions notice */}
-              <div className="rounded-2xl bg-indigo-50/60 border border-indigo-100 px-4 py-3 space-y-1">
-                <p className="text-xs font-black text-[#5B4FBF] tracking-tight">Level 0 — Basic Account</p>
-                <ul className="text-[11px] font-medium text-[#6C5DD3]/80 space-y-0.5 list-disc list-inside">
+              <div className="rounded-2xl bg-[#B8FCFC]/30 border border-[#B8FCFC] px-4 py-3 space-y-1">
+                <p className="text-xs font-black text-[#E05400] tracking-tight">Level 0 — Basic Account</p>
+                <ul className="text-[11px] font-medium text-slate-600 space-y-0.5 list-disc list-inside">
                   <li>Create and join paluwagan circles</li>
                   <li>Deposit and receive USDC</li>
                   <li>Lower transaction/value limits apply</li>
@@ -425,13 +422,13 @@ export default function RegisterPage() {
                   type="checkbox"
                   checked={tosAccepted}
                   onChange={(e) => setTosAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-violet-200 accent-[#6C5DD3]"
+                  className="mt-0.5 h-4 w-4 rounded border-[#B8FCFC] accent-[#FF5E00]"
                 />
                 <span className="text-[11px] font-medium text-slate-400 leading-relaxed">
                   I agree to the{' '}
-                  <a href="/terms" className="text-[#6C5DD3] font-bold underline">Terms of Service</a>
+                  <a href="/terms" className="text-[#FF5E00] font-bold underline">Terms of Service</a>
                   {' '}and{' '}
-                  <a href="/privacy" className="text-[#6C5DD3] font-bold underline">Privacy Policy</a>.
+                  <a href="/privacy" className="text-[#FF5E00] font-bold underline">Privacy Policy</a>.
                   I understand STELLA Vault is non-custodial and I am responsible for my PIN and recovery phrase.
                 </span>
               </label>
@@ -445,7 +442,7 @@ export default function RegisterPage() {
               <button
                 onClick={handleProfileSubmit}
                 disabled={!displayName.trim() || !tosAccepted}
-                className="w-full bg-[#6C5DD3] text-white rounded-2xl py-4 text-sm font-black tracking-tight disabled:opacity-40 hover:bg-[#5B4FBF] transition-colors"
+                className="w-full bg-[#FF5E00] text-white rounded-2xl py-4 text-sm font-black tracking-tight disabled:opacity-40 hover:bg-[#E05400] transition-colors"
               >
                 Send verification code
               </button>
@@ -455,10 +452,10 @@ export default function RegisterPage() {
 
         {/* OTP Verification — Level 0 requirement: mobile phone number with OTP verification */}
         {step === 'otp' && (
-          <section className="rounded-4xl border border-violet-100/50 bg-white p-6 shadow-xl shadow-indigo-900/5">
+          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
             <div className="space-y-8">
               <div className="text-center space-y-1">
-                <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-[#6C5DD3]">
+                <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00]">
                   <PhoneIcon className="h-6 w-6" />
                 </div>
                 <h2 className="text-lg font-black text-slate-800 tracking-tight">Verify your number</h2>
@@ -468,9 +465,9 @@ export default function RegisterPage() {
               </div>
 
               {/* Demo hint — no live SMS provider wired up yet */}
-              <div className="rounded-2xl bg-indigo-50/60 border border-indigo-100 px-4 py-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#6C5DD3]/70">Testnet demo code</p>
-                <p className="text-lg font-black tracking-[0.3em] text-[#5B4FBF] mt-0.5">{demoOtp}</p>
+              <div className="rounded-2xl bg-[#B8FCFC]/30 border border-[#B8FCFC] px-4 py-3 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#E05400]/80">Testnet demo code</p>
+                <p className="text-lg font-black tracking-[0.3em] text-[#E05400] mt-0.5">{demoOtp}</p>
               </div>
 
               {/* OTP dots */}
@@ -482,8 +479,8 @@ export default function RegisterPage() {
                       i < otpCode.length
                         ? otpError
                           ? 'bg-red-500 border-red-500'
-                          : 'bg-[#6C5DD3] border-[#6C5DD3]'
-                        : 'border-violet-200'
+                          : 'bg-[#FF5E00] border-[#FF5E00]'
+                        : 'border-[#B8FCFC]'
                     }`}
                   >
                     {i < otpCode.length && <div className="w-3 h-3 rounded-full bg-white" />}
@@ -498,7 +495,7 @@ export default function RegisterPage() {
               )}
 
               {otpLoading && (
-                <p className="text-[#6C5DD3] text-sm text-center -mt-4">Verifying…</p>
+                <p className="text-[#FF5E00] text-sm text-center -mt-4">Verifying…</p>
               )}
 
               {/* Numpad */}
@@ -515,7 +512,7 @@ export default function RegisterPage() {
                       className={`aspect-square rounded-2xl text-xl font-semibold transition-all active:scale-95 ${
                         key === ''
                           ? 'opacity-0 pointer-events-none'
-                          : 'bg-indigo-50 text-slate-800 hover:bg-indigo-100'
+                          : 'bg-[#B8FCFC]/40 text-slate-800 hover:bg-[#B8FCFC]/70'
                       }`}
                     >
                       {key}
@@ -528,7 +525,7 @@ export default function RegisterPage() {
                 <button
                   onClick={generateAndSendOtp}
                   disabled={resendCooldown > 0}
-                  className="w-full text-sm font-bold text-[#6C5DD3] disabled:text-slate-300 py-2 transition-colors"
+                  className="w-full text-sm font-bold text-[#FF5E00] disabled:text-slate-300 py-2 transition-colors"
                 >
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
@@ -545,15 +542,15 @@ export default function RegisterPage() {
 
         {/* Done */}
         {step === 'done' && (
-          <section className="rounded-4xl border border-violet-100/50 bg-white py-16 px-6 shadow-xl shadow-indigo-900/5 flex flex-col items-center justify-center space-y-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-[#6C5DD3]">
+          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white py-16 px-6 shadow-xl shadow-slate-900/5 flex flex-col items-center justify-center space-y-4">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00]">
               <SparkleStar className="h-6 w-6" />
             </div>
             <h2 className="text-lg font-black text-slate-800 tracking-tight">Vault created!</h2>
             <p className="text-xs font-medium text-slate-400 text-center leading-relaxed">
               Welcome to STELLA Vault, {displayName}. Taking you to your dashboard…
             </p>
-            <div className="w-8 h-8 border-2 border-[#6C5DD3] border-t-transparent rounded-full animate-spin mt-2" />
+            <div className="w-8 h-8 border-2 border-[#FF5E00] border-t-transparent rounded-full animate-spin mt-2" />
           </section>
         )}
 
