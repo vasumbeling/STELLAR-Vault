@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 
-type Tab = 'home' | 'activity' | 'profile';
+type Tab = 'home' | 'vaults' | 'activity' | 'profile';
 type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | 'create' | null;
 
 interface WheelProps {
@@ -12,12 +12,13 @@ interface WheelProps {
   setPanel: (panel: Panel) => void;
 }
 
+// Fixed slot angles ordered clockwise to accurately match the visual mockup placement geometry
 const SLOTS = [
-  { angle: 0,    tab: 'home', panel: 'deposit'  as Panel, label: "DEPOSIT"  },
-  { angle: -72,  tab: 'home', panel: 'withdraw' as Panel, label: "WITHDRAW" },
-  { angle: -144, tab: 'home', panel: 'send'     as Panel, label: "SEND"     },
-  { angle: -216, tab: 'home', panel: 'create'   as Panel, label: "CREATE"   },
-  { angle: -288, tab: 'home', panel: 'receive'  as Panel, label: "RECEIVE"  },
+  { angle: 0,    tab: 'home', panel: 'deposit'  as Panel, label: "Deposit"  },
+  { angle: -72,  tab: 'home', panel: 'withdraw' as Panel, label: "Withdraw" },
+  { angle: -144, tab: 'home', panel: 'create'   as Panel, label: "Vault"     },
+  { angle: -216, tab: 'home', panel: 'receive'  as Panel, label: "Receive"  },
+  { angle: -288, tab: 'home', panel: 'send'     as Panel, label: "Send"     },
 ];
 
 function getClosestSlot(currentRotation: number) {
@@ -44,9 +45,8 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  const targetSlot = SLOTS.find(s => s.tab === activeTab && s.panel === panel) || SLOTS[0];
+  const targetSlot = SLOTS.find(s => s.panel === panel) || SLOTS[0];
   const currentRotation = isDragging ? dragRotation : targetSlot.angle;
-  const currentActionLabel = isDragging ? getClosestSlot(dragRotation).label : targetSlot.label;
 
   const getAngleFromCenter = (clientX: number, clientY: number) => {
     if (!wheelRef.current) return 0;
@@ -84,42 +84,32 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
     setPanel(finalSlot.panel);
   };
 
-  // Direct action when an icon node is tapped directly
   const handleIconTap = (e: React.PointerEvent, slot: typeof SLOTS[0]) => {
-    e.stopPropagation(); // Prevents initializing dragging logic on the outer container
+    e.stopPropagation();
     setActiveTab(slot.tab);
     setPanel(slot.panel);
   };
 
   const transitionStyle = isDragging
     ? 'none'
-    : 'transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
 
   return (
-    <section className="relative flex flex-col items-center justify-center pt-4 pb-10 select-none">
-
-      {/* Top Indicator Arrow & Dynamic Label */}
-      <div className="z-20 flex flex-col items-center gap-1 pointer-events-none mb-3">
-        <div className="font-black text-lg tracking-widest text-[#FF5E00] uppercase font-sans">
-          {currentActionLabel}
-        </div>
-        <div
-          className="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[9px]"
-          style={{ borderBottomColor: '#FF5E00' }}
-        />
-      </div>
-
-      {/* Outer Circular Track */}
+    <section className="relative flex flex-col items-center justify-center select-none w-full my-6">
+      
+      {/* Outer Dotted Track Boundary */}
       <div
         ref={wheelRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`relative w-76 h-76 rounded-full border-14 border-[#F9F6F0] bg-[#FAF6F0]/30 flex items-center justify-center shadow-[inset_0_4px_12px_rgba(0,0,0,0.03),0_20px_40px_rgba(243,114,44,0.04),0_10px_20px_rgba(0,0,0,0.02)] ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`relative w-72 h-72 rounded-full border border-dashed border-amber-200/70 bg-transparent flex items-center justify-center transition-colors duration-200 ${
+          isDragging ? 'cursor-grabbing border-cyan-200 bg-amber-50/10' : 'cursor-grab'
+        }`}
         style={{ touchAction: 'none' }}
       >
-        {/* Rotatable Node Wheel Frame */}
+        {/* Rotatable Node Wheel Structural Frame */}
         <div
           className="absolute inset-0 rounded-full"
           style={{ transform: `rotate(${currentRotation}deg)`, transition: transitionStyle }}
@@ -127,93 +117,115 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
           {SLOTS.map((slot, i) => {
             const angleDeg = (i * 72) - 90; 
             const angleRad = (angleDeg * Math.PI) / 180;
-            const radius = 42; 
+            const radius = 50; 
             const x = 50 + radius * Math.cos(angleRad);
             const y = 50 + radius * Math.sin(angleRad);
 
-            const isActive = activeTab === slot.tab && panel === slot.panel;
+            const isActive = panel === slot.panel;
+            
             const icons: Record<string, React.ReactNode> = {
               deposit: (
-                <svg className="w-6 h-6 stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="12" y1="4" x2="12" y2="20"/><polyline points="18 14 12 20 6 14"/>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6-6m-6 6l-6-6" />
                 </svg>
               ),
               withdraw: (
-                <svg className="w-6 h-6 stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="12" y1="20" x2="12" y2="4"/><polyline points="6 10 12 4 18 10"/>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
                 </svg>
               ),
               send: (
-                <svg className="w-5 h-5 stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                <svg className="w-5 h-5 transform -rotate-45 translate-x-0.5 -translate-y-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               ),
               create: (
-                <svg className="w-6 h-6 stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 3" />
+                  <path d="M4 12h16M12 4v16" strokeLinecap="round" />
                 </svg>
               ),
               receive: (
-                <svg className="w-5 h-5 stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="6" height="6" rx="0.5"/>
-                  <rect x="15" y="3" width="6" height="6" rx="0.5"/>
-                  <rect x="15" y="15" width="6" height="6" rx="0.5"/>
-                  <rect x="3" y="15" width="6" height="6" rx="0.5"/>
-                  <path d="M9 9h2v2H9V9zM13 13h2v2h-2v-2z"/>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
               ),
             };
 
             return (
-              <button
+              <div
                 key={slot.panel}
-                type="button"
-                onPointerDown={(e) => handleIconTap(e, slot)}
-                className="absolute z-30 outline-none cursor-pointer group"
+                className="absolute z-30 flex flex-col items-center justify-center w-22 h-22 pointer-events-none"
                 style={{
                   left: `${x}%`,
                   top: `${y}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                <div
-                  className={`flex items-center justify-center rounded-full transition-all duration-200 w-13 h-13 active:scale-90 group-hover:scale-105 ${
-                    isActive
-                      ? 'bg-[#9AFAFA] text-[#0F4F53] shadow-lg shadow-cyan-300/20 ring-[5px] ring-cyan-200/80'
-                      : 'bg-[#FF5E00] text-white hover:bg-[#ff6e1a]'
+                {/* Multi-tone Action Button Circle with Cream & Yellow/Orange Hover Triggers */}
+                <button
+                  type="button"
+                  onPointerDown={(e) => handleIconTap(e, slot)}
+                  className={`pointer-events-auto flex items-center justify-center rounded-full w-12 h-12 shadow-sm border transition-all duration-150 outline-none active:scale-90 hover:scale-105 ${
+                    isActive 
+                      ? 'bg-gradient-to-b from-white to-cyan-50/40 border-cyan-200 text-cyan-600 shadow-cyan-100/50' 
+                      : 'bg-gradient-to-b from-white to-amber-50/20 border-amber-100/70 text-[#FF5E00] hover:border-orange-200'
                   }`}
                   style={{
                     transform: `rotate(${-currentRotation}deg)`,
-                    transition: isDragging ? 'none' : 'transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, box-shadow 0.2s',
+                    transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)',
                   }}
                 >
                   {icons[slot.panel ?? '']}
+                </button>
+                
+                {/* Light Teal Accent Label System - Counter-rotated */}
+                <div 
+                  className="w-24 text-center mt-2 pointer-events-none flex justify-center"
+                  style={{
+                    transform: `rotate(${-currentRotation}deg)`,
+                    transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)',
+                  }}
+                >
+                  <span className={`text-[10px] tracking-wider block px-2 py-0.5 rounded-md transition-all duration-300 uppercase ${
+                    isActive 
+                      ? 'text-cyan-700 bg-cyan-50/80 font-bold font-mono border border-cyan-100/50' 
+                      : 'text-slate-500 font-medium'
+                  }`}>
+                    {slot.label}
+                  </span>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
 
-        {/* Central Stationary Core Hub */}
-        <div className="w-34 h-34 rounded-full bg-[#FFFBF7] flex items-center justify-center z-20 shadow-md border-2 border-[#F3EFE9] relative pointer-events-none overflow-hidden">
-          <div className="absolute inset-2 border border-dashed border-orange-500/25 rounded-full"></div>
-          <div className="w-16 h-16 relative z-30 text-[#FF5E00] flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity="0.1" />
-              <line x1="12" y1="2" x2="12" y2="4" />
-              <line x1="12" y1="20" x2="12" y2="22" />
-              <line x1="2" y1="12" x2="4" y2="12" />
-              <line x1="20" y1="12" x2="22" y2="12" />
-              <circle cx="12" cy="12" r="1.2" fill="currentColor" />
-            </svg>
+        {/* Central Stationary Cream Core Dial Hub */}
+        <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center z-20 shadow-xs shadow-amber-900/5 relative pointer-events-none">
+          
+          {/* Active Rotational Tracking Indicator Yellow/Orange Notch */}
+          <div 
+            className="absolute inset-1 rounded-full"
+            style={{ 
+              transform: `rotate(${-currentRotation}deg)`,
+              transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)'
+            }}
+          >
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#FF9F1C] rounded-full shadow-xs shadow-orange-300" />
+          </div>
+
+          {/* Inner Decorative Shield Cream & White Gradient Ring Container */}
+          <div className="w-26 h-26 rounded-full border-4 border-amber-50/50 bg-gradient-to-b from-white to-amber-50/30 flex items-center justify-center shadow-inner">
+            {/* Core Shield Emblem Representation */}
+            <div className="w-9 h-9 text-[#FF9F1C] flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(255,159,28,0.15)]">
+              <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
           </div>
         </div>
-      </div>
 
-      <p className="mt-5 text-slate-400 text-[10px] font-black tracking-wider uppercase pointer-events-none">
-        TURN THE VAULT
-      </p>
+      </div>
     </section>
   );
 }
