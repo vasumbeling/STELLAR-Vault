@@ -168,8 +168,8 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
                   onPointerDown={(e) => handleIconTap(e, slot)}
                   className={`pointer-events-auto flex items-center justify-center rounded-full w-12 h-12 shadow-sm border transition-all duration-150 outline-none active:scale-90 hover:scale-105 ${
                     isActive 
-                      ? 'bg-gradient-to-b from-white to-cyan-50/40 border-cyan-200 text-cyan-600 shadow-cyan-100/50' 
-                      : 'bg-gradient-to-b from-white to-amber-50/20 border-amber-100/70 text-[#FF5E00] hover:border-orange-200'
+                      ? 'bg-linear-to-b from-white to-cyan-50/40 border-cyan-200 text-cyan-600 shadow-cyan-100/50' 
+                      : 'bg-linear-to-b from-white to-amber-50/20 border-amber-100/70 text-[#FF5E00] hover:border-orange-200'
                   }`}
                   style={{
                     transform: `rotate(${-currentRotation}deg)`,
@@ -215,7 +215,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
           </div>
 
           {/* Inner Decorative Shield Cream & White Gradient Ring Container */}
-          <div className="w-26 h-26 rounded-full border-4 border-amber-50/50 bg-gradient-to-b from-white to-amber-50/30 flex items-center justify-center shadow-inner">
+          <div className="w-26 h-26 rounded-full border-4 border-amber-50/50 bg-linear-to-b from-white to-amber-50/30 flex items-center justify-center shadow-inner">
             {/* Core Shield Emblem Representation */}
             <div className="w-9 h-9 text-[#FF9F1C] flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(255,159,28,0.15)]">
               <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
