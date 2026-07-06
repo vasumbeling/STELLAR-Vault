@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchBalances, type Balances } from '@/lib/balances';
 import { walletService, authFetch } from '@/lib/wallet';
-import { walletService, authFetch } from '@/lib/wallet';
 import {
   contractConfigured,
   readSavingsState,
