@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchBalances, type Balances } from '@/lib/balances';
 import { walletService, authFetch } from '@/lib/wallet';
+import { walletService, authFetch } from '@/lib/wallet';
 import {
   contractConfigured,
   readSavingsState,
@@ -503,59 +504,60 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                   </div>
                 )}
 
-                {/* DEPOSIT CONTAINER */}
-                {panel === 'deposit' && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Deposit Amount</label>
-                      <span className="text-[11px] font-bold text-slate-400 font-mono">Currency: USDC</span>
+                {/* ---------- DEPOSIT & RECEIVE COMBINED CONTAINER ---------- */}
+                {(panel === 'deposit' || panel === 'receive') && (
+                  <div className="rounded-4xl bg-white p-6 shadow-sm border border-[#e4beb1]/30 space-y-4 text-[#1e1b18] animate-fadeIn">
+                    {/* Header Pipeline Info */}
+                    <div>
+                      <h2 className="text-sm font-black text-[#a73a00] tracking-tight uppercase">
+                        {panel === 'deposit' ? 'Deposit' : 'Receive'}
+                      </h2>
                     </div>
 
-                    <div className="relative flex items-center">
-                      <input
-                        type="number" 
-                        value={depositAmount} 
-                        onChange={(e) => setDepositAmount(e.target.value)} 
-                        placeholder="0.00" 
-                        disabled={busy}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-4 pr-16 py-3.5 text-base font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
-                      />
-                      <span className="absolute right-4 text-xs font-black text-slate-400">USDC</span>
+                    {/* Operational Mode Segment Selector */}
+                    <div className="grid grid-cols-2 p-1 bg-[#fbf2ed]/60 border border-[#e4beb1]/20 rounded-xl">
+                      <button 
+                        type="button"
+                        onClick={() => setPanel('deposit')}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${panel === 'deposit' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/50'}`}
+                      >
+                        Deposit
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setPanel('receive'); setReceiveMode('address'); }}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${panel === 'receive' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/50'}`}
+                      >
+                        Receive
+                      </button>
                     </div>
 
-                    {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
-                    <div className="bg-orange-50/50 border border-orange-100/50 rounded-xl px-4 py-2.5 flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Value</span>
-                      <span className="text-sm font-black text-[#FF5E00]">
-                        ₱{((Number(depositAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
-                      </span>
-                    </div>
+                    {/* SUB-FLOW A: DEPOSIT SYSTEM */}
+                    {panel === 'deposit' && (
+                      <div className="space-y-4 animate-fadeIn">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5b4137]">ENTER AMOUNT</label>
+                          <div className="relative flex items-center">
+                            <input
+                              type="number" 
+                              value={depositAmount} 
+                              onChange={(e) => setDepositAmount(e.target.value)} 
+                              placeholder="0.00" 
+                              disabled={busy}
+                              className="w-full rounded-xl bg-[#fbf2ed]/40 border border-[#e4beb1]/30 pl-3 pr-16 py-2.5 text-sm font-bold text-[#1e1b18] placeholder-[#5b4137]/30 outline-none focus:border-[#a73a00] disabled:opacity-50 transition-colors"
+                            />
+                            <span className="absolute right-4 text-xs font-black text-[#5b4137]/50">USDC</span>
+                          </div>
+                        </div>
 
-                    <button onClick={handleDeposit} disabled={busy || loading || !depositAmount || Number(depositAmount) <= 0} className="w-full py-3.5 rounded-2xl bg-[#FF5E00] text-white text-xs font-black tracking-wider uppercase shadow-md shadow-orange-500/10 active:scale-[0.99] transition-transform disabled:opacity-40">
-                      {busy ? 'Processing Transaction…' : 'Execute Deposit'}
-                    </button>
-                  </div>
-                )}
+                        {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
+                        <div className="bg-[#fff8f5] border border-[#e4beb1]/20 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                          <span className="text-[10px] font-bold uppercase text-[#5b4137] tracking-wider">Estimated Value</span>
+                          <span className="text-xs font-black text-[#ff5c00]">
+                            ₱{((Number(depositAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
+                          </span>
+                        </div>
 
-                {/* WITHDRAW CONTAINER */}
-                {panel === 'withdraw' && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Withdraw Amount</label>
-                      <span className="text-[11px] font-bold text-slate-400 font-mono">Max: {usdcBalance.toFixed(2)} USDC</span>
-                    </div>
-                    
-                    <div className="relative flex items-center">
-                      <input
-                        type="number" 
-                        value={withdrawAmount} 
-                        onChange={(e) => setWithdrawAmount(e.target.value)} 
-                        placeholder="0.00" 
-                        disabled={busy}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-4 pr-24 py-3.5 text-base font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
-                      />
-                      <div className="absolute right-3 flex items-center gap-2">
-                        <span className="text-xs font-black text-slate-400">USDC</span>
                         <button 
                           onClick={() => setWithdrawAmount(Math.floor(usdcBalance).toString())}
                           className="px-2 py-1 text-[10px] font-black tracking-wide text-[#FF5E00] bg-orange-50 rounded-md uppercase"
@@ -573,82 +575,134 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                       </span>
                     </div>
 
-                    <button onClick={handleWithdraw} className="w-full py-3.5 mt-1 rounded-2xl bg-slate-200 text-slate-500 text-xs font-black tracking-wider uppercase cursor-not-allowed">
-                      Coming Soon
+                    <button onClick={handleWithdraw} disabled={busy || loading || !withdrawAmount || Number(withdrawAmount) <= 0} className="w-full py-3.5 mt-1 rounded-2xl bg-[#FF5E00] text-white text-xs font-black tracking-wider uppercase active:scale-[0.99] transition-transform disabled:opacity-40 shadow-md shadow-orange-500/10">
+                      {busy ? 'Processing Transaction…' : 'Execute Withdrawal'}
                     </button>
                   </div>
                 )}
 
-                {/* RECEIVE CONTAINER */}
-                {panel === 'receive' && publicKey && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
-                      <button 
-                        onClick={() => setReceiveMode('address')}
-                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${receiveMode === 'address' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
-                      >
-                        My Address
-                      </button>
-                      <button 
-                        onClick={() => setReceiveMode('qr')}
-                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${receiveMode === 'qr' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
-                      >
-                        Show QR Code
-                      </button>
-                    </div>
-
-                    {receiveMode === 'address' ? (
-                      <div className="space-y-3 animate-fadeIn">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Stellar Vault Address</p>
-                        <p className="break-all rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-3 font-mono text-xs text-slate-700 leading-normal">{publicKey}</p>
-                        <button onClick={handleCopyAddress} className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold active:bg-slate-200 transition-colors">
-                          {copied ? 'Copied Securely!' : 'Copy to Clipboard'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-4 space-y-3 animate-fadeIn">
-                        <div className="w-40 h-40 bg-white border border-slate-200 p-2 rounded-2xl shadow-inner flex items-center justify-center relative">
-                          <div className="absolute inset-0 bg-slate-900/5 flex items-center justify-center rounded-2xl">
-                            <div className="w-28 h-28 border-[3px] border-slate-800 flex flex-wrap p-1 gap-1 bg-white">
-                              <div className="w-8 h-8 bg-slate-800" />
-                              <div className="w-8 h-8 bg-transparent" />
-                              <div className="w-8 h-8 bg-slate-800" />
-                              <div className="w-full h-2 bg-slate-800" />
-                              <div className="w-6 h-6 bg-slate-800" />
-                              <div className="w-10 h-6 bg-slate-800" />
-                            </div>
-                          </div>
+                    {/* SUB-FLOW B: RECEIVE PROTOCOL */}
+                    {panel === 'receive' && publicKey && (
+                      <div className="space-y-4 animate-fadeIn">
+                        {/* Internal Address vs QR mini switcher */}
+                        <div className="grid grid-cols-2 p-0.5 bg-[#fbf2ed]/30 border border-[#e4beb1]/10 rounded-lg">
+                          <button 
+                            onClick={() => setReceiveMode('address')}
+                            className={`py-1 text-[9px] font-black uppercase tracking-wider rounded-md transition-all ${receiveMode === 'address' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/40'}`}
+                          >
+                            My Address
+                          </button>
+                          <button 
+                            onClick={() => setReceiveMode('qr')}
+                            className={`py-1 text-[9px] font-black uppercase tracking-wider rounded-md transition-all ${receiveMode === 'qr' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/40'}`}
+                          >
+                            Show QR Code
+                          </button>
                         </div>
-                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Scan to send assets</span>
+
+                        {receiveMode === 'address' ? (
+                          <div className="space-y-3 animate-fadeIn">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5b4137]">STELLA Vault Address</label>
+                            <p className="break-all rounded-xl border border-[#e4beb1]/20 bg-[#fbf2ed]/30 px-3 py-3 font-mono text-xs text-[#1e1b18] leading-relaxed">{publicKey}</p>
+                            <button 
+                              onClick={handleCopyAddress} 
+                              className="w-full py-2.5 rounded-xl bg-[#fff8f5] border border-[#e4beb1]/30 text-[#a73a00] text-xs font-bold hover:bg-[#fbf2ed]/50 transition-colors active:scale-[0.99]"
+                            >
+                              {copied ? 'Copied Securely!' : 'Copy to Clipboard'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-2 space-y-3 animate-fadeIn">
+                            <div className="w-32 h-32 bg-white border border-[#e4beb1]/30 p-2 rounded-2xl flex items-center justify-center relative">
+                              <div className="absolute inset-0 bg-[#a73a00]/5 flex items-center justify-center rounded-2xl">
+                                <div className="w-20 h-20 border-[3px] border-[#1e1b18] flex flex-wrap p-1 gap-1 bg-white">
+                                  <div className="w-5 h-5 bg-[#1e1b18]" />
+                                  <div className="w-5 h-5 bg-transparent" />
+                                  <div className="w-5 h-5 bg-[#1e1b18]" />
+                                  <div className="w-full h-1 bg-[#1e1b18]" />
+                                  <div className="w-4 h-4 bg-[#1e1b18]" />
+                                  <div className="w-6 h-4 bg-[#1e1b18]" />
+                                </div>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-black tracking-widest text-[#5b4137]/60 uppercase">Scan to send</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* SEND CONTAINER */}
-                {panel === 'send' && (
-                  <div className="space-y-4">
+                {/* ---------- WITHDRAW CONTAINER ---------- */}
+                {panel === 'withdraw' && (
+                  <div className="rounded-4xl bg-white p-6 shadow-sm border border-[#e4beb1]/30 space-y-4 text-[#1e1b18] animate-fadeIn">
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Send Assets</h4>
-                      <p className="text-[11px] text-slate-400 font-medium">Multi-sig flow requiring reciprocal action clearance before deployment.</p>
+                      <h2 className="text-sm font-black text-[#a73a00] tracking-tight uppercase">Withdraw</h2>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-baseline">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5b4137]">ENTER AMOUNT</label>
+                        <span className="text-[9px] font-bold text-[#5b4137]/50 font-mono">Max: {usdcBalance.toFixed(2)}</span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <input
+                          type="number" 
+                          value={withdrawAmount} 
+                          onChange={(e) => setWithdrawAmount(e.target.value)} 
+                          placeholder="0.00" 
+                          disabled={busy}
+                          className="w-full rounded-xl bg-[#fbf2ed]/40 border border-[#e4beb1]/30 pl-3 pr-24 py-2.5 text-sm font-bold text-[#1e1b18] placeholder-[#5b4137]/30 outline-none focus:border-[#a73a00] disabled:opacity-50 transition-colors"
+                        />
+                        <div className="absolute right-3 flex items-center gap-1.5">
+                          <span className="text-xs font-black text-[#5b4137]/50">USDC</span>
+                          <button 
+                            onClick={() => setWithdrawAmount(Math.floor(usdcBalance).toString())}
+                            className="px-2 py-1 text-[9px] font-black tracking-wider text-[#ff5c00] bg-[#fff8f5] border border-[#e4beb1]/30 rounded-md uppercase hover:bg-[#fbf2ed] transition-colors"
+                          >
+                            Max
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
+                    <div className="bg-[#fff8f5] border border-[#e4beb1]/20 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                      <span className="text-[10px] font-bold uppercase text-[#5b4137] tracking-wider">Estimated Value</span>
+                      <span className="text-xs font-black text-[#ff5c00]">
+                        ₱{((Number(withdrawAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
+                      </span>
+                    </div>
+
+                    <button disabled className="w-full py-3 rounded-xl bg-[#e9e1dc] text-[#5b4137]/50 text-xs font-black tracking-widest uppercase cursor-not-allowed">
+                      Coming Soon
+                    </button>
+                  </div>
+                )}
+
+                {/* ---------- SEND CONTAINER ---------- */}
+                {panel === 'send' && (
+                  <div className="rounded-4xl bg-white p-6 shadow-sm border border-[#e4beb1]/30 space-y-4 text-[#1e1b18] animate-fadeIn">
+                    <div>
+                      <h2 className="text-sm font-black text-[#a73a00] tracking-tight uppercase">Send</h2>
                     </div>
 
                     {!publicKey ? (
-                      <p className="p-4 rounded-2xl bg-slate-50 text-xs text-slate-400 font-medium">Verify structural keys to invoke transmission parameters.</p>
+                      <p className="p-4 rounded-xl bg-[#fbf2ed]/40 text-xs text-[#5b4137]/50 font-medium text-center">Verify structural keys to invoke transmission parameters.</p>
                     ) : (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+                        <div className="grid grid-cols-2 p-1 bg-[#fbf2ed]/60 border border-[#e4beb1]/20 rounded-xl">
                           <button 
                             type="button"
                             onClick={() => setSendMode('amount')}
-                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'amount' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'amount' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/50'}`}
                           >
                             Enter Amount
                           </button>
                           <button 
                             type="button"
                             onClick={() => setSendMode('qr')}
-                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'qr' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'}`}
+                            className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${sendMode === 'qr' ? 'bg-white text-[#a73a00] shadow-xs' : 'text-[#5b4137]/50'}`}
                           >
                             Scan QR Code
                           </button>
@@ -658,90 +712,109 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
                           <>
                             {!pendingApproval && (
                               <div className="space-y-3 animate-fadeIn">
-                                <div className="space-y-1.5">
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Recipient Account Destination</label>
+                                <div className="space-y-1">
+                                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5b4137]">Recipient Destination</label>
                                   <input
-                                    type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="G..." disabled={busy}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-xs font-mono text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                    type="text" 
+                                    value={recipient} 
+                                    onChange={(e) => setRecipient(e.target.value)} 
+                                    placeholder="Stellar Public Address (G...)" 
+                                    disabled={busy}
+                                    className="w-full rounded-xl bg-[#fbf2ed]/40 border border-[#e4beb1]/30 px-3 py-2.5 text-xs font-mono text-[#1e1b18] placeholder-[#5b4137]/30 outline-none focus:border-[#a73a00] disabled:opacity-50 transition-colors"
                                   />
                                 </div>
-                                <div className="space-y-1.5">
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Payload Volume (USDC)</label>
+                                <div className="space-y-1">
+                                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5b4137]">ENTER AMOUNT</label>
                                   <div className="relative flex items-center">
                                     <input
-                                      type="number" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="0.00" disabled={busy}
-                                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-16 py-3 text-sm font-bold text-slate-800 placeholder-slate-300 focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                      type="number" 
+                                      value={transferAmount} 
+                                      onChange={(e) => setTransferAmount(e.target.value)} 
+                                      placeholder="0.00" 
+                                      disabled={busy}
+                                      className="w-full rounded-xl bg-[#fbf2ed]/40 border border-[#e4beb1]/30 pl-3 pr-16 py-2.5 text-sm font-bold text-[#1e1b18] placeholder-[#5b4137]/30 outline-none focus:border-[#a73a00] disabled:opacity-50 transition-colors"
                                     />
-                                    <span className="absolute right-4 text-xs font-black text-slate-400">USDC</span>
+                                    <span className="absolute right-4 text-xs font-black text-[#5b4137]/50">USDC</span>
                                   </div>
                                 </div>
 
                                 {/* LIVE VISIBLE PHP EQUIVALENT ESTIMATE BOX */}
-                                <div className="bg-orange-50/50 border border-orange-100/50 rounded-xl px-4 py-2.5 flex justify-between items-center">
-                                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Value</span>
-                                  <span className="text-sm font-black text-[#FF5E00]">
+                                <div className="bg-[#fff8f5] border border-[#e4beb1]/20 rounded-xl px-4 py-2.5 flex justify-between items-center">
+                                  <span className="text-[10px] font-bold uppercase text-[#5b4137] tracking-wider">Estimated Value</span>
+                                  <span className="text-xs font-black text-[#ff5c00]">
                                     ₱{((Number(transferAmount) || 0) * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PHP
                                   </span>
                                 </div>
 
-                                <button onClick={handleTransferRequest} disabled={!recipient || !transferAmount || busy} className="w-full py-3.5 mt-2 rounded-2xl bg-[#FF5E00] text-white text-xs font-black uppercase tracking-widest disabled:opacity-40 shadow-md shadow-orange-500/10">
-                                  {busy ? 'Constructing Flow…' : 'Initialize Multi-Sig Stream'}
+                                <button 
+                                  type="button"
+                                  onClick={handleTransferRequest}
+                                  disabled={!recipient || !transferAmount || Number(transferAmount) <= 0}
+                                  className="w-full py-3 rounded-xl bg-[#ff5c00] text-white text-xs font-black tracking-widest uppercase hover:bg-[#a73a00] transition-all disabled:opacity-40 active:scale-[0.98]"
+                                >
+                                  Request
                                 </button>
                               </div>
                             )}
 
                             {pendingApproval && (
-                              <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-600">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-black text-slate-800 uppercase tracking-wide">Stream Phase</span>
-                                  <span className="rounded-full bg-orange-100 px-3 py-1 text-[10px] uppercase tracking-wider text-[#FF5E00] font-black">{pendingApproval.status}</span>
+                              <div className="rounded-xl border border-[#e4beb1]/40 bg-[#fff8f5] p-4 space-y-3 animate-fadeIn">
+                                <div className="flex justify-between items-center border-b border-[#e4beb1]/20 pb-2">
+                                  <span className="text-[10px] font-black uppercase text-[#a73a00] tracking-wider">Pending Transfer Agreement</span>
+                                  <span className="text-xs font-mono font-bold text-[#ff5c00]">{pendingApproval.amount} USDC</span>
                                 </div>
-                                <div className="space-y-1.5 text-[11px] text-slate-500 font-mono">
-                                  <p className="truncate">Source: {pendingApproval.sender}</p>
-                                  <p className="truncate">Target: {pendingApproval.recipient}</p>
-                                  <div className="flex justify-between items-center mt-2 bg-white p-2 rounded-lg border border-slate-100">
-                                    <span className="font-sans font-bold text-slate-800 text-xs">Value: {pendingApproval.amount.toFixed(2)} USDC</span>
-                                    <span className="font-sans font-black text-[#FF5E00] text-xs">₱{(pendingApproval.amount * phpRate).toLocaleString(undefined, { minimumFractionDigits: 2 })} PHP</span>
+                                <div className="text-[11px] space-y-1 text-[#5b4137] font-medium">
+                                  <p className="truncate"><span className="font-bold">From:</span> {pendingApproval.sender}</p>
+                                  <p className="truncate"><span className="font-bold">To:</span> {pendingApproval.recipient}</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 pt-1 text-[10px] font-bold text-center">
+                                  <div className={`p-2 rounded-lg border ${pendingApproval.senderAuthorized ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-[#e9e1dc]/50 border-[#e4beb1]/30 text-[#5b4137]/60'}`}>
+                                    Sender {pendingApproval.senderAuthorized ? '✓ Verified' : '○ Needed'}
+                                  </div>
+                                  <div className={`p-2 rounded-lg border ${pendingApproval.receiverAuthorized ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-[#e9e1dc]/50 border-[#e4beb1]/30 text-[#5b4137]/60'}`}>
+                                    Receiver {pendingApproval.receiverAuthorized ? '✓ Verified' : '○ Needed'}
                                   </div>
                                 </div>
-                                <div className="flex flex-col gap-2 pt-2">
-                                  {publicKey === pendingApproval.sender && !pendingApproval.senderAuthorized && (
-                                    <button onClick={handleApproveAsSender} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-bold text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Approve as Signatory Source</button>
+
+                                <div className="flex gap-2 pt-1">
+                                  {pendingApproval.sender === publicKey && !pendingApproval.senderAuthorized && (
+                                    <button type="button" onClick={handleApproveAsSender} className="flex-1 py-2 rounded-xl bg-[#ff5c00] text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#a73a00] transition-colors">
+                                      Sign as Sender
+                                    </button>
                                   )}
-                                  {publicKey === pendingApproval.recipient && !pendingApproval.receiverAuthorized && (
-                                    <button onClick={handleApproveAsReceiver} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-bold text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Approve as Target Registry</button>
+                                  {pendingApproval.recipient === publicKey && !pendingApproval.receiverAuthorized && (
+                                    <button type="button" onClick={handleApproveAsReceiver} className="flex-1 py-2 rounded-xl bg-[#ff5c00] text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#a73a00] transition-colors">
+                                      Sign as Receiver
+                                    </button>
                                   )}
-                                  {pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && publicKey === pendingApproval.sender && (
-                                    <button onClick={handleSubmitApprovedTransfer} disabled={busy} className="w-full rounded-xl bg-[#FF5E00] px-3 py-2.5 font-black text-white disabled:opacity-50 text-xs uppercase tracking-wider shadow-md shadow-orange-500/10">Submit Block payload</button>
+                                  {pendingApproval.sender === publicKey && pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && (
+                                    <button type="button" onClick={handleSubmitApprovedTransfer} disabled={busy} className="flex-1 py-2 rounded-xl bg-[#9AFAFA] text-[#0F4F53] text-[11px] font-black uppercase tracking-widest hover:bg-[#7becec] transition-colors">
+                                      {busy ? 'Deploying Payload…' : 'Submit Settlement'}
+                                    </button>
                                   )}
+                                  <button 
+                                    type="button" 
+                                    onClick={() => { removePendingTransferApproval(pendingApproval.id); setError(''); setMsg(''); }}
+                                    className="px-3 py-2 rounded-xl bg-[#e9e1dc] text-[#5b4137] text-[11px] font-bold uppercase hover:bg-[#dfd5ce] transition-colors"
+                                  >
+                                    Void
+                                  </button>
                                 </div>
                               </div>
                             )}
                           </>
                         ) : (
-                          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 space-y-3 animate-fadeIn">
-                            <svg className="w-10 h-10 text-slate-400 stroke-current" fill="none" strokeWidth="2" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h4v4H6V4zm10 0h4v4h-4V4zM6 14h4v4H6v-4zm10 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 0h2v2h-2v-2z" />
-                            </svg>
-                            <span className="text-[11px] font-bold text-slate-500">Camera Permission Request Pending…</span>
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setRecipient('GBCNM4ZQXH5X2WRNZV2TL6NQUU6NMX4XF6OQWLSK3LCE5WXT5E6MSTELLA');
-                                setTransferAmount('100');
-                                setSendMode('amount');
-                                setMsg('Scanned data loaded successfully!');
-                              }}
-                              className="text-[10px] font-black uppercase text-[#FF5E00] bg-orange-50 px-2.5 py-1 rounded-md"
-                            >
-                              Mock Scan QR Code
-                            </button>
+                          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#e4beb1]/40 rounded-2xl bg-[#fff8f5]/40 animate-fadeIn">
+                            <span className="material-symbols-outlined text-3xl text-[#ff5c00]/40 animate-pulse">qr_code_scanner</span>
+                            <span className="text-[10px] font-black tracking-widest text-[#5b4137]/60 uppercase mt-2">Open Camera...</span>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
+
               {/* CREATE VAULT CONTAINER */}
                 {panel === 'create' && publicKey && (
                   <CreateVault
