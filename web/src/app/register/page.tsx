@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateAccount } from '@/components/auth/CreateAccount';
 import { saveProfile } from '@/lib/auth/verification';
+import { authFetch } from '@/lib/wallet';
 
 type OnboardStep = 'intro' | 'pin' | 'profile' | 'otp' | 'done';
 
@@ -155,13 +156,13 @@ export default function RegisterPage() {
     setOtpError('');
   }
 
-  function handleVerifyOtp() {
+  async function handleVerifyOtp() {
     if (otpCode.length !== OTP_LENGTH) return;
     setOtpLoading(true);
     setOtpError('');
 
     // Demo-only verification against the locally generated code.
-    setTimeout(() => {
+    setTimeout(async () => {
       if (otpCode !== demoOtp) {
         setOtpError('Incorrect code. Please try again.');
         setOtpCode('');
@@ -179,6 +180,19 @@ export default function RegisterPage() {
         verificationLevel: 0,
         createdAt: new Date().toISOString(),
       });
+
+      try {
+        await authFetch('/api/users', {
+          method: 'POST',
+          body: JSON.stringify({
+            pubkey: publicKey,
+            username: displayName.trim(),
+          }),
+        });
+      } catch {
+        // Non-fatal — the account still works locally even if this sync fails.
+        // The user isn't blocked from finishing onboarding over a backend hiccup.
+      }
 
       setOtpLoading(false);
       setStep('done');
