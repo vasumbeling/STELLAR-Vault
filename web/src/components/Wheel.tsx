@@ -140,9 +140,10 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
                 </svg>
               ),
               create: (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 3" />
-                  <path d="M4 12h16M12 4v16" strokeLinecap="round" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect x="4" y="4" width="16" height="16" rx="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="12" r="2" />
+                  <path d="M12 8v2M12 14v2M8 12h2M14 12h2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               ),
               receive: (

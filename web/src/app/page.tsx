@@ -143,13 +143,13 @@ export default function Home() {
         <div className="mt-2">
           <SavingsDashboard key={localRefreshKey} wallet={wallet} publicKey={publicKey} />
         </div>
-
-        {/* Hackathon Meta Attributions */}
-        <footer className="mt-12 text-center text-[10px] font-black tracking-wider text-slate-400 px-4 uppercase leading-relaxed">
-          Built by Team Ada&apos;s Lovelies
-          <br />
-          <span className="opacity-60 font-medium lowercase tracking-normal">One secure vault and one community at a time.</span>
-        </footer>
+        
+        {/* Brand System Footer Deck Layout */}
+        <div className="flex flex-col items-center space-y-4 pt-12">
+          <span className="text-[10px] font-normal text-slate-400 tracking-normal">
+            © 2026 Team Ada's Lovelies. All rights reserved.
+          </span>
+        </div>
       </div>
     </main>
   );
