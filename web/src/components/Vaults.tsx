@@ -28,18 +28,18 @@ function VaultCard({ vault }: { vault: VaultData }) {
     : 0;
 
   return (
-    <div className="p-6 rounded-3xl bg-white border border-slate-200/60 shadow-md shadow-slate-900/1 space-y-3">
+    <div className="p-6 rounded-3xl bg-white border border-slate-200/60 shadow-md shadow-slate-900/5 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-black text-slate-800">{vault.name}</h4>
-        <span className="rounded-full bg-orange-50 border border-orange-100/60 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#FF5E00]">
+        <h4 className="text-sm font-semibold text-slate-800">{vault.name}</h4>
+        <span className="rounded-full bg-orange-50 border border-orange-100/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#FF5E00]">
           {vault.vaultType}
         </span>
       </div>
       {vault.description && (
-        <p className="text-[10px] text-slate-400 font-medium">{vault.description}</p>
+        <p className="text-xs text-slate-400 font-normal">{vault.description}</p>
       )}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-[11px] font-bold text-slate-500">
+        <div className="flex justify-between text-[11px] font-medium text-slate-500">
           <span>{vault.balance.toFixed(2)} / {vault.targetAmount.toFixed(2)} USDC</span>
           <span>{progress.toFixed(0)}%</span>
         </div>
@@ -50,7 +50,7 @@ function VaultCard({ vault }: { vault: VaultData }) {
           />
         </div>
       </div>
-      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
         vault.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
       }`}>
         {vault.status}
@@ -97,14 +97,12 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
 
   return (
     <div className="px-6 py-2 space-y-6 animate-fade-in">
-
-      {/* Header — matches Profile/History layout frame exactly */}
       <div className="flex justify-between items-center px-1">
-        <h3 className="text-xl font-black text-[#FF5E00] tracking-tight">Vaults</h3>
+        <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">Vaults</h3>
         <button
           onClick={refresh}
           disabled={isLoading}
-          className="px-5 py-2 text-xs font-black bg-[#9AFAFA] text-[#0F4F53] rounded-full shadow-md shadow-cyan-300/10 hover:bg-[#7becec] active:scale-95 disabled:opacity-50 uppercase tracking-widest transition-all duration-200 cursor-pointer"
+          className="px-5 py-2 text-xs font-semibold bg-[#9AFAFA] text-[#0F4F53] rounded-full shadow-md shadow-cyan-300/10 hover:bg-[#7becec] active:scale-95 disabled:opacity-50 uppercase tracking-wider transition-all duration-200 cursor-pointer"
         >
           {isLoading ? (
             <span className="flex items-center gap-1.5 justify-center">
@@ -121,22 +119,21 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
       </div>
 
       {!publicKey ? (
-        <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-medium text-slate-400 text-center shadow-md shadow-slate-900/1">
+        <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
           Log in to view your vaults.
         </p>
       ) : (
         <>
           {error && (
             <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2.5">
-              <p className="text-[11px] font-bold text-rose-600 leading-normal">{error}</p>
+              <p className="text-xs font-medium text-rose-600 leading-normal">{error}</p>
             </div>
           )}
 
-          {/* Sub-tab switcher */}
           <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
             <button
               onClick={() => setSubTab('owned')}
-              className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+              className={`py-2 text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all ${
                 subTab === 'owned' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'
               }`}
             >
@@ -144,7 +141,7 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
             </button>
             <button
               onClick={() => setSubTab('joined')}
-              className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+              className={`py-2 text-[11px] font-semibold uppercase tracking-wider rounded-lg transition-all ${
                 subTab === 'joined' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400'
               }`}
             >
@@ -154,11 +151,11 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
 
           <div className="space-y-3">
             {isLoading ? (
-              <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-medium text-slate-400 text-center shadow-md shadow-slate-900/1">
+              <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
                 Loading…
               </p>
             ) : activeList.length === 0 ? (
-              <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-medium text-slate-400 text-center shadow-md shadow-slate-900/1">
+              <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
                 {subTab === 'owned'
                   ? "You don't own any vaults yet."
                   : "You haven't joined any vaults yet."}

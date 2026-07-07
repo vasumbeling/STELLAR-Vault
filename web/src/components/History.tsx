@@ -22,16 +22,13 @@ function entryVisual(kind: string) {
 
 export default function History({ history, loading, onRefresh }: HistoryProps) {
   return (
-    // Root outer wrapper now mirrors Profile's boosted horizontal edge bounds
     <div className="px-6 py-2 space-y-6 animate-fade-in">
-      
-      {/* Header element padding matches Profile layout frame */}
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-xl font-black text-[#FF5E00] tracking-tight">History</h3>
+        <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">History</h3>
         <button 
           onClick={onRefresh} 
           disabled={loading} 
-          className="px-5 py-2 text-xs font-black bg-[#9AFAFA] text-[#0F4F53] rounded-full shadow-md shadow-cyan-300/10 hover:bg-[#7becec] active:scale-95 disabled:opacity-50 uppercase tracking-widest transition-all duration-200 cursor-pointer"
+          className="px-5 py-2 text-xs font-semibold bg-[#9AFAFA] text-[#0F4F53] rounded-full shadow-md shadow-cyan-300/10 hover:bg-[#7becec] active:scale-95 disabled:opacity-50 uppercase tracking-wider transition-all duration-200 cursor-pointer"
         >
           {loading ? (
             <span className="flex items-center gap-1.5 justify-center">
@@ -47,29 +44,26 @@ export default function History({ history, loading, onRefresh }: HistoryProps) {
         </button>
       </div>
       
-      {/* Content wrapper layout containing the items stack */}
       <div className="space-y-3">
         {history.length === 0 ? (
-          // Empty State block boosted to matching p-6 configuration
-          <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-medium text-slate-400 text-center shadow-md shadow-slate-900/1">
+          <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
             No localized network block events recorded on this public key.
           </p>
         ) : (
           history.map((entry) => {
             const v = entryVisual(entry.kind);
             return (
-              // Individual cards boosted to clean p-6 layout configuration
-              <div key={entry.id} className="p-6 rounded-3xl bg-white border border-slate-200/60 shadow-md shadow-slate-900/1 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full ${v.bg} ${v.fg} flex items-center justify-center shrink-0 font-black shadow-inner text-sm`}>
+              <div key={entry.id} className="p-6 rounded-3xl bg-white border border-slate-200/60 shadow-md shadow-slate-900/5 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full ${v.bg} ${v.fg} flex items-center justify-center shrink-0 font-bold shadow-inner text-sm`}>
                   {v.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-xs text-slate-800 truncate">{entry.title}</h4>
-                  <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">{entry.description}</p>
+                  <h4 className="font-semibold text-xs text-slate-800 truncate">{entry.title}</h4>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5 font-normal">{entry.description}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-xs font-black text-slate-800">{entry.amount.toFixed(2)}</span>
-                  <p className="text-[9px] text-slate-400 font-mono mt-0.5">
+                  <span className="text-xs font-semibold text-slate-800">{entry.amount.toFixed(2)}</span>
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-normal">
                     {new Date(entry.timestamp).toLocaleDateString()}
                   </p>
                 </div>

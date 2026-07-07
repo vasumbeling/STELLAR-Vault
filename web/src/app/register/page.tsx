@@ -21,84 +21,18 @@ const COUNTRIES = [
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 30;
 
-/* ---------- Pure Inline Decorative Icons (matches dashboard) ---------- */
-function SparkleStar({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M12 2c0 4.2 1.2 7 3.2 9S22 12.8 22 12s-4.8-.8-6.8-2.8S12 2 12 2z" fill="currentColor" />
-      <path d="M12 22c0-4.2-1.2-7-3.2-9S2 11.2 2 12s4.8.8 6.8 2.8S12 22 12 22z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function LockIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="4" y="10" width="16" height="10" rx="2"></rect>
-      <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
-    </svg>
-  );
-}
-
-function CoinIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="9"></circle>
-      <path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1.1 3 2.5-1.3 2-3 2.5-3 1.1-3 2.5 1.3 2.5 3 2.5 3-1.1 3-2.5"></path>
-    </svg>
-  );
-}
-
-function GroupIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="9" cy="8" r="3"></circle>
-      <circle cx="17" cy="9" r="2.5"></circle>
-      <path d="M3 20c0-3 2.5-5.5 6-5.5s6 2.5 6 5.5"></path>
-      <path d="M15 15.2c2.6.3 4.5 2.2 4.5 4.8"></path>
-    </svg>
-  );
-}
-
-function BoltIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"></path>
-    </svg>
-  );
-}
-
-function PhoneIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="6" y="2" width="12" height="20" rx="2"></rect>
-      <line x1="10" y1="18" x2="14" y2="18"></line>
-    </svg>
-  );
-}
-
-function CameraIcon({ className = '' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path>
-      <circle cx="12" cy="13" r="3.5"></circle>
-    </svg>
-  );
-}
-
 export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState<OnboardStep>('intro');
   const [publicKey, setPublicKey] = useState('');
 
-  // Profile fields — Level 0 requirements per Progressive Identity Verification framework
+  // Profile fields — Level 0 requirements
   const [displayName, setDisplayName] = useState('');
   const [country, setCountry] = useState('Philippines');
   const [phone, setPhone] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
   const [profileError, setProfileError] = useState('');
 
-  // Optional Level 0 fields
   const [email, setEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
@@ -125,7 +59,6 @@ export default function RegisterPage() {
   }
 
   function generateAndSendOtp() {
-    // Demo-only: real implementation would call an SMS provider (e.g. Twilio) here.
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setDemoOtp(code);
     setResendCooldown(RESEND_COOLDOWN);
@@ -133,7 +66,7 @@ export default function RegisterPage() {
 
   function handleProfileSubmit() {
     if (!displayName.trim()) return setProfileError('Display name is required');
-    if (!phone.trim() || phone.length < 10) return setProfileError('A valid mobile number is required for OTP verification');
+    if (!phone.trim() || phone.length < 10) return setProfileError('A valid mobile number is required');
     if (!tosAccepted) return setProfileError('Please accept the terms to continue');
     setProfileError('');
 
@@ -155,46 +88,43 @@ export default function RegisterPage() {
     setOtpError('');
   }
 
-  function handleVerifyOtp() {
-    if (otpCode.length !== OTP_LENGTH) return;
-    setOtpLoading(true);
-    setOtpError('');
+function handleVerifyOtp() {
+  if (otpCode.length !== OTP_LENGTH) return;
+  setOtpLoading(true);
+  setOtpError('');
 
-    // Demo-only verification against the locally generated code.
-    setTimeout(() => {
-      if (otpCode !== demoOtp) {
-        setOtpError('Incorrect code. Please try again.');
-        setOtpCode('');
-        setOtpLoading(false);
-        return;
-      }
-
-      saveProfile({
-        displayName: displayName.trim(),
-        country,
-        phoneNumber: phone,
-        phoneVerified: true,
-        tosAccepted: true,
-        email: email || undefined,
-        verificationLevel: 0,
-        createdAt: new Date().toISOString(),
-      });
-
+  setTimeout(() => {
+    if (otpCode !== demoOtp) {
+      setOtpError('Incorrect code. Please try again.');
+      setOtpCode('');
       setOtpLoading(false);
-      setStep('done');
-      setTimeout(() => router.push('/'), 2000);
-    }, 600);
-  }
+      return;
+    }
 
-  // Auto-verify once all 6 digits are entered
+    // Save profile with verificationLevel: 0 (Decoupled from seed backup)
+    saveProfile({
+      displayName: displayName.trim(),
+      country,
+      phoneNumber: phone,
+      phoneVerified: true,
+      tosAccepted: true,
+      email: email || undefined,
+      verificationLevel: 0, // Level 0 achieved; Level 1 will prompt for recovery words inside settings dashboard later
+      createdAt: new Date().toISOString(),
+    });
+
+    setOtpLoading(false);
+    setStep('done');
+    setTimeout(() => router.push('/'), 2000);
+  }, 600);
+}
+
   useEffect(() => {
     if (otpCode.length === OTP_LENGTH && !otpLoading) {
       handleVerifyOtp();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpCode]);
 
-  // Resend cooldown countdown
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
@@ -204,166 +134,158 @@ export default function RegisterPage() {
   const STEP_ORDER: OnboardStep[] = ['pin', 'profile', 'otp'];
 
   return (
-    <main className="min-h-screen w-full bg-[#FAF8F5] text-slate-800 antialiased selection:bg-[#FF5E00]/10 flex items-center justify-center py-8 px-4">
-
-      {/* Phone frame container — matches live dashboard DOM */}
-      <div className="w-full max-w-md min-h-[880px] bg-[#FAF8F5] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col justify-between font-sans border border-slate-100/80">
-
-      <div className="flex-1 overflow-y-auto px-4 py-12">
-
-        {/* Core Header Section */}
-      <header className="mb-6 px-1">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-[#B8FCFC]/40 border border-dashed border-[#B8FCFC] flex items-center justify-center overflow-hidden shrink-0">
-            <img src="stellamascot.png" alt="STELLA Vault" className="w-full h-full object-cover" />
-          </div>
-          <h1 className="text-xl font-black text-slate-800 tracking-tight">STELLA Vault</h1>
-        </div>
-
-        {/* Step progress dots */}
-        {step !== 'intro' && step !== 'done' && (
-          <div className="flex gap-1.5 mt-5">
-            {STEP_ORDER.map((s, i) => (
-              <div
-                key={s}
-                className={`h-1 flex-1 rounded-full transition-all ${
-                  STEP_ORDER.indexOf(step) >= i ? 'bg-[#FF5E00]' : 'bg-[#B8FCFC]'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </header>
-
-        {/* Intro */}
-        {step === 'intro' && (
-          <div className="space-y-5">
-            <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-tight">
-                Save together,<br />grow together
-              </h2>
-              <p className="text-xs font-medium text-slate-400 leading-relaxed mt-2">
-                A digital paluwagan built on Stellar. No government ID required to get started.
-              </p>
-            </section>
-
-            <div className="space-y-2.5">
-              {[
-                { Icon: LockIcon, title: 'PIN-protected', desc: 'Your vault is locked with a PIN only you know' },
-                { Icon: PhoneIcon, title: 'Phone + OTP verified', desc: 'Just your mobile number — no bank or ID needed' },
-                { Icon: CoinIcon, title: 'Save in USDC', desc: 'Beat peso inflation with stable USD savings' },
-                { Icon: GroupIcon, title: 'Paluwagan circles', desc: 'Join or create group savings with your community' },
-                { Icon: BoltIcon, title: 'No government ID', desc: 'Level 0 requires only a PIN, nickname, and phone' },
-              ].map(({ Icon, title, desc }) => (
+    <main className="min-h-screen w-full bg-[#FAF8F5] text-slate-700 antialiased flex items-center justify-center py-6 px-4">
+      {/* Structural Phone Container Frame */}
+      <div className="w-full max-w-sm min-h-[820px] bg-[#FAF8F5] flex flex-col justify-between font-sans px-2 py-4">
+        
+        <div className="flex-1 flex flex-col justify-center">
+          
+          {/* Global Multi-step Progress Bar Indicator */}
+          {step !== 'intro' && step !== 'done' && (
+            <div className="flex gap-2 mb-8 px-1 w-full max-w-xs mx-auto">
+              {STEP_ORDER.map((s, i) => (
                 <div
-                  key={title}
-                  className="flex items-start gap-3 rounded-4xl border border-[#B8FCFC]/60 bg-white p-4 shadow-xl shadow-slate-900/5"
-                >
-                  <div className="p-1.5 bg-[#B8FCFC]/40 rounded-xl text-[#FF5E00] shrink-0">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-700 tracking-tight">{title}</p>
-                    <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-relaxed">{desc}</p>
-                  </div>
-                </div>
+                  key={s}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                    STEP_ORDER.indexOf(step) >= i ? 'bg-[#FF9F1C]' : 'bg-amber-100/40'
+                  }`}
+                />
               ))}
             </div>
+          )}
 
-            <button
-              onClick={() => setStep('pin')}
-              className="w-full bg-[#FF5E00] text-white rounded-2xl py-4 text-sm font-black tracking-tight hover:bg-[#E05400] transition-colors"
-            >
-              Create my vault
-            </button>
+          {/* INTRO STEP */}
+          {step === 'intro' && (
+            <div className="space-y-8 flex flex-col items-center">
+              
+              {/* Premium Floating Graphic Deck */}
+              <div className="w-full relative px-2 max-w-[290px] mx-auto rounded-3xl overflow-hidden bg-[#FAF8F5] shadow-xs border border-amber-100/20">
+                <div className="absolute inset-0 bg-gradient-to-b from-amber-50/20 to-transparent pointer-events-none" />
+                <img 
+                  src="stellamascot.png" 
+                  alt="STELLA Mascot Vault" 
+                  className="w-full h-auto object-contain mx-auto drop-shadow-[0_8px_24px_rgba(255,159,28,0.12)]"
+                />
+              </div>
 
-            <p className="text-center text-xs font-medium text-slate-400">
-              Already have a vault?{' '}
-              <button
-                onClick={() => router.push('/login')}
-                className="font-black text-[#FF5E00] hover:underline"
-              >
-                Log in
-              </button>
-            </p>
-          </div>
-        )}
+              {/* Exact Copy Frame Headlines */}
+              <div className="text-center space-y-4 max-w-xs px-2 mx-auto">
+                <h2 className="text-[26px] font-semibold text-slate-800 tracking-tight leading-tight">
+                  Save money that keeps its value.
+                </h2>
+                <p className="text-sm font-normal text-slate-400 leading-relaxed px-1">
+                  Save anytime, from any amount, and protect your savings from losing value over time.
+                </p>
+              </div>
 
-        {/* PIN + Recovery */}
-        {step === 'pin' && (
-          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
-            <CreateAccount
-              onComplete={handleAccountCreated}
-              onBack={() => setStep('intro')}
-            />
-          </section>
-        )}
+              {/* CTA Action Deck Buttons */}
+              <div className="w-full max-w-xs space-y-3 px-2 pt-2">
+                <button
+                  onClick={() => setStep('pin')}
+                  className="w-full bg-[#FF9F1C] hover:bg-[#FF8C00] text-white rounded-xl py-3.5 text-sm font-medium tracking-wide shadow-xs active:scale-98 transition-all"
+                >
+                  Sign up
+                </button>
+                
+                <button
+                  onClick={() => router.push('/login')}
+                  className="w-full bg-white border border-amber-100/60 text-slate-600 rounded-xl py-3.5 text-sm font-medium tracking-wide hover:bg-amber-50/10 active:scale-98 transition-all"
+                >
+                  Log in
+                </button>
+              </div>
 
-        {/* Profile */}
-        {step === 'profile' && (
-          <div className="space-y-5">
-            <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5 space-y-6">
-              <div className="text-center space-y-1">
-                {/* Optional profile picture */}
-                <div className="relative mx-auto mb-1 w-16 h-16">
+              {/* Grid Feature Matrix Nodes */}
+              <div className="w-full max-w-xs grid grid-cols-2 gap-3 px-2 pt-2">
+                <div className="bg-white border border-amber-100/20 p-3.5 rounded-xl flex flex-col justify-between space-y-1 shadow-xs">
+                  <div className="text-[#FF9F1C]">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-semibold text-slate-700">Quick Setup</h4>
+                    <p className="text-[10px] font-normal text-slate-400 mt-0.5">Ready in 2 mins</p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-amber-100/20 p-3.5 rounded-xl flex flex-col justify-between space-y-1 shadow-xs">
+                  <div className="text-[#FF9F1C]">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879-.659c1.546-1.16 2.699-2.74 3.62-4.476C14.805 7.9 14.15 6 12 6c-1.34 0-2.344.664-2.88 1.636" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-semibold text-slate-700">High Yield</h4>
+                    <p className="text-[10px] font-normal text-slate-400 mt-0.5">Grow your funds</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PIN GENERATOR ACCORDION STEP */}
+          {step === 'pin' && (
+            <div className="w-full max-w-xs mx-auto animate-fade-in">
+              <CreateAccount
+                onComplete={handleAccountCreated}
+                onBack={() => setStep('intro')}
+              />
+            </div>
+          )}
+
+          {/* PROFILE DATA ACCORDION STEP */}
+          {step === 'profile' && (
+            <div className="w-full max-w-xs mx-auto space-y-6 animate-fade-in">
+              <div className="text-center space-y-1.5">
+                <div className="relative mx-auto mb-2 w-14 h-14">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-16 h-16 rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00] flex items-center justify-center overflow-hidden border border-[#B8FCFC]"
+                    className="w-14 h-14 rounded-xl bg-white text-slate-400 flex items-center justify-center overflow-hidden border border-amber-100/40 shadow-xs"
                   >
                     {profilePicture ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                      <img src={profilePicture} alt="Profile Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <CameraIcon className="h-6 w-6" />
+                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                      </svg>
                     )}
                   </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </div>
-                <h2 className="text-lg font-black text-slate-800 tracking-tight">Set up your profile</h2>
-                <p className="text-[11px] font-medium text-slate-400">No real name required — a nickname is fine.</p>
+                <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Set up your profile</h3>
+                <p className="text-xs font-normal text-slate-400">A friendly nickname is fine.</p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Display name *
-                  </label>
+                  <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Display name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Ate Maria or Kuya Jun"
+                    placeholder="e.g. Ate Maria"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    maxLength={30}
-                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-300"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Country
-                  </label>
+                  <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Country</label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-300"
                   >
                     {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Phone number * <span className="normal-case text-slate-300">(we&apos;ll text you a code)</span>
-                  </label>
+                  <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Phone number</label>
                   <div className="flex gap-2">
-                    <span className="border border-[#B8FCFC] rounded-xl px-3 py-3 text-sm font-medium bg-[#B8FCFC]/30 text-slate-600">
+                    <span className="border border-slate-200 rounded-xl px-3 py-3 text-xs font-medium bg-slate-50 text-slate-500 flex items-center">
                       🇵🇭 +63
                     </span>
                     <input
@@ -372,196 +294,129 @@ export default function RegisterPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                       maxLength={10}
-                      className="flex-1 border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-300"
                     />
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Email <span className="normal-case text-slate-300">(optional)</span>
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Referral code <span className="normal-case text-slate-300">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. JUAN2026"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    maxLength={12}
-                    className="w-full border border-[#B8FCFC] rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#FF5E00]/30 focus:border-[#FF5E00]"
-                  />
-                </div>
               </div>
 
-              {/* Level 0 restrictions notice */}
-              <div className="rounded-2xl bg-[#B8FCFC]/30 border border-[#B8FCFC] px-4 py-3 space-y-1">
-                <p className="text-xs font-black text-[#E05400] tracking-tight">Level 0 — Basic Account</p>
-                <ul className="text-[11px] font-medium text-slate-600 space-y-0.5 list-disc list-inside">
-                  <li>Create and join paluwagan circles</li>
-                  <li>Deposit and receive USDC</li>
-                  <li>Lower transaction/value limits apply</li>
-                  <li>Cannot cash out to PHP yet — upgrade to Level 1 or 2 later</li>
-                </ul>
-              </div>
-
-              {/* ToS */}
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={tosAccepted}
                   onChange={(e) => setTosAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-[#B8FCFC] accent-[#FF5E00]"
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-amber-200 text-[#FF9F1C] focus:ring-transparent"
                 />
-                <span className="text-[11px] font-medium text-slate-400 leading-relaxed">
-                  I agree to the{' '}
-                  <a href="/terms" className="text-[#FF5E00] font-bold underline">Terms of Service</a>
-                  {' '}and{' '}
-                  <a href="/privacy" className="text-[#FF5E00] font-bold underline">Privacy Policy</a>.
-                  I understand STELLA Vault is non-custodial and I am responsible for my PIN and recovery phrase.
+                <span className="text-[11px] font-normal text-slate-400 leading-normal">
+                  I agree to the <span className="text-[#FF9F1C] font-medium underline">Terms</span> and understand STELLA Vault is fully non-custodial.
                 </span>
               </label>
 
               {profileError && (
-                <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2">
-                  <p className="text-[11px] font-bold text-rose-600 leading-normal">{profileError}</p>
-                </div>
+                <p className="text-red-500 text-[11px] text-center font-medium bg-red-50/60 border border-red-100/50 rounded-xl py-2 px-3">{profileError}</p>
               )}
 
               <button
                 onClick={handleProfileSubmit}
                 disabled={!displayName.trim() || !tosAccepted}
-                className="w-full bg-[#FF5E00] text-white rounded-2xl py-4 text-sm font-black tracking-tight disabled:opacity-40 hover:bg-[#E05400] transition-colors"
+                className="w-full bg-[#FF9F1C] text-white rounded-xl py-3.5 text-sm font-medium disabled:opacity-40 hover:bg-[#FF8C00] transition-colors"
               >
                 Send verification code
               </button>
-            </section>
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* OTP Verification — Level 0 requirement: mobile phone number with OTP verification */}
-        {step === 'otp' && (
-          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white p-6 shadow-xl shadow-slate-900/5">
-            <div className="space-y-8">
+          {/* OTP HANDSHAKE ACCORDION STEP */}
+          {step === 'otp' && (
+            <div className="w-full max-w-xs mx-auto space-y-6 animate-fade-in">
               <div className="text-center space-y-1">
-                <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00]">
-                  <PhoneIcon className="h-6 w-6" />
-                </div>
-                <h2 className="text-lg font-black text-slate-800 tracking-tight">Verify your number</h2>
-                <p className="text-[11px] font-medium text-slate-400">
-                  We sent a {OTP_LENGTH}-digit code to +63 {phone || '9XX XXX XXXX'}
-                </p>
+                <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Verify number</h3>
+                <p className="text-xs font-normal text-slate-400">Sent a verification payload to +63 {phone}</p>
               </div>
 
-              {/* Demo hint — no live SMS provider wired up yet */}
-              <div className="rounded-2xl bg-[#B8FCFC]/30 border border-[#B8FCFC] px-4 py-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#E05400]/80">Testnet demo code</p>
-                <p className="text-lg font-black tracking-[0.3em] text-[#E05400] mt-0.5">{demoOtp}</p>
+              <div className="bg-cyan-50/50 border border-cyan-100/50 rounded-xl py-2 px-4 text-center">
+                <p className="text-[9px] font-semibold text-cyan-700 uppercase tracking-widest font-mono">Demo payload code</p>
+                <p className="text-base font-semibold tracking-widest text-cyan-800 font-mono mt-0.5">{demoOtp}</p>
               </div>
 
-              {/* OTP dots */}
-              <div className="flex gap-3 justify-center">
+              {/* Status Indicators */}
+              <div className="flex gap-3 justify-center py-2">
                 {Array.from({ length: OTP_LENGTH }).map((_, i) => (
                   <div
                     key={i}
-                    className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all ${
+                    className={`w-3.5 h-3.5 rounded-full border transition-all ${
                       i < otpCode.length
                         ? otpError
-                          ? 'bg-red-500 border-red-500'
-                          : 'bg-[#FF5E00] border-[#FF5E00]'
-                        : 'border-[#B8FCFC]'
+                          ? 'bg-red-400 border-red-400'
+                          : 'bg-[#FF9F1C] border-[#FF9F1C]'
+                        : 'border-amber-200 bg-transparent'
                     }`}
-                  >
-                    {i < otpCode.length && <div className="w-3 h-3 rounded-full bg-white" />}
-                  </div>
+                  />
                 ))}
               </div>
 
-              {otpError && (
-                <p className="text-red-500 text-sm text-center bg-red-50 rounded-lg px-3 py-2 -mt-4">
-                  {otpError}
-                </p>
-              )}
-
-              {otpLoading && (
-                <p className="text-[#FF5E00] text-sm text-center -mt-4">Verifying…</p>
-              )}
-
-              {/* Numpad */}
-              <div className="max-w-xs mx-auto">
-                <div className="grid grid-cols-3 gap-4">
-                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        if (key === '⌫') handleOtpBackspace();
-                        else if (key !== '') handleOtpDigit(key);
-                      }}
-                      disabled={key === '' || otpLoading}
-                      className={`aspect-square rounded-2xl text-xl font-semibold transition-all active:scale-95 ${
-                        key === ''
-                          ? 'opacity-0 pointer-events-none'
-                          : 'bg-[#B8FCFC]/40 text-slate-800 hover:bg-[#B8FCFC]/70'
-                      }`}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                </div>
+              {/* Grid Number Input Pad Layout */}
+              <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (key === '⌫') handleOtpBackspace();
+                      else if (key !== '') handleOtpDigit(key);
+                    }}
+                    disabled={key === '' || otpLoading}
+                    className={`h-11 rounded-xl text-base font-medium flex items-center justify-center transition-all ${
+                      key === ''
+                        ? 'opacity-0 pointer-events-none'
+                        : key === '⌫'
+                        ? 'text-slate-400 active:scale-95'
+                        : 'bg-white border border-amber-100/30 text-slate-600 active:scale-95'
+                    }`}
+                  >
+                    {key}
+                  </button>
+                ))}
               </div>
 
-              <div className="space-y-3">
+              <div className="flex flex-col items-center gap-2 pt-2">
                 <button
                   onClick={generateAndSendOtp}
                   disabled={resendCooldown > 0}
-                  className="w-full text-sm font-bold text-[#FF5E00] disabled:text-slate-300 py-2 transition-colors"
+                  className="text-xs font-medium text-[#FF9F1C] disabled:text-slate-300 transition-colors"
                 >
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
-                <button
-                  onClick={() => setStep('profile')}
-                  className="w-full text-sm text-slate-500 hover:text-slate-700 py-2"
-                >
+                <button onClick={() => setStep('profile')} className="text-xs font-medium text-slate-400 py-1">
                   Back
                 </button>
               </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* Done */}
-        {step === 'done' && (
-          <section className="rounded-4xl border border-[#B8FCFC]/60 bg-white py-16 px-6 shadow-xl shadow-slate-900/5 flex flex-col items-center justify-center space-y-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B8FCFC]/40 text-[#FF5E00]">
-              <SparkleStar className="h-6 w-6" />
+          {/* SUCCESS FINALIZE STEP */}
+          {step === 'done' && (
+            <div className="w-full max-w-xs mx-auto text-center space-y-4 py-8 animate-fade-in">
+              <div className="w-10 h-10 rounded-full bg-cyan-50 border border-cyan-100 flex items-center justify-center mx-auto text-cyan-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Account created!</h3>
+              <p className="text-xs font-normal text-slate-400 leading-relaxed px-4">
+                Welcome, {displayName}. Unlocking your STELLA Vault.
+              </p>
             </div>
-            <h2 className="text-lg font-black text-slate-800 tracking-tight">Vault created!</h2>
-            <p className="text-xs font-medium text-slate-400 text-center leading-relaxed">
-              Welcome to STELLA Vault, {displayName}. Taking you to your dashboard…
-            </p>
-            <div className="w-8 h-8 border-2 border-[#FF5E00] border-t-transparent rounded-full animate-spin mt-2" />
-          </section>
-        )}
+          )}
 
-        {/* Footer */}
-        <footer className="mt-12 text-center text-[10px] font-semibold tracking-wide text-slate-400 px-4 leading-relaxed">
-          Built by Team Ada&apos;s Lovelies
-          <br />
-          <span className="opacity-75 font-normal">One secure vault and one community at a time.</span>
-        </footer>
+        </div>
 
-      </div>
+        {/* Brand System Footer Deck Layout */}
+        <div className="flex flex-col items-center space-y-4 pt-12">
+          <span className="text-[10px] font-normal text-slate-400 tracking-normal">
+            © 2026 Team Ada's Lovelies. All rights reserved.
+          </span>
+        </div>
+
       </div>
     </main>
   );

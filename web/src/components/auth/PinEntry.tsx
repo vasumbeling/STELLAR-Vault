@@ -34,7 +34,7 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [locked]);
+  }, [locked, lockTimer]);
 
   // Auto-submit when PIN is full
   useEffect(() => {
@@ -63,7 +63,6 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
     setError('');
 
     try {
-      const { walletService } = await import('@/lib/wallet');
       const { unlockPinAccount } = await import('@/lib/wallet');
       await unlockPinAccount(pin);
       onSuccess();
@@ -72,7 +71,6 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
       setAttempts(newAttempts);
       setPin('');
 
-      // Shake animation
       setShake(true);
       setTimeout(() => setShake(false), 500);
 
@@ -92,80 +90,90 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-1">
-        <h2 className="text-xl font-semibold text-gray-900">Welcome back</h2>
-        <p className="text-sm text-gray-500">Enter your PIN to unlock your vault</p>
+    <div className="w-full flex flex-col items-center bg-[#FAF8F5] select-none text-slate-600 antialiased">
+      
+      {/* Minimal Top Brand Row */}
+      <div className="w-full flex items-center justify-between mb-16 px-2">
       </div>
 
-      {/* PIN dots */}
-      <div className="flex gap-3 justify-center">
+      {/* Typography Configuration - Scaled back down to clean, lightweight weights */}
+      <div className="text-center space-y-1 mb-12">
+        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">Welcome back</h2>
+        <p className="text-xs font-normal text-slate-400">Enter your PIN to unlock your vault</p>
+      </div>
+
+      {/* 6-Digit Minimal Status Indicators */}
+      <div className={`flex gap-4 justify-center mb-12 ${shake ? 'animate-shake' : ''}`}>
         {Array.from({ length: PIN_LENGTH }).map((_, i) => (
           <div
             key={i}
-            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
-              shake ? 'animate-bounce' : ''
-            } ${
+            className={`w-2.5 h-2.5 rounded-full border transition-all duration-150 ${
               i < pin.length
                 ? error
-                  ? 'bg-red-500 border-red-500'
+                  ? 'bg-red-400 border-red-400'
                   : 'bg-[#FF5E00] border-[#FF5E00]'
                 : locked
-                ? 'border-gray-200 bg-gray-50'
-                : 'border-gray-300'
+                ? 'border-slate-200 bg-slate-100'
+                : 'border-amber-200 bg-transparent'
             }`}
-          >
-            {i < pin.length && <div className="w-3 h-3 rounded-full bg-white" />}
-          </div>
+          />
         ))}
       </div>
 
-      {/* Error / lock state */}
-      {locked ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
-          <p className="text-red-600 text-sm font-medium">Account temporarily locked</p>
-          <p className="text-red-500 text-xs mt-1">
-            Try again in {lockTimer}s
-          </p>
-        </div>
-      ) : error ? (
-        <p className="text-red-500 text-sm text-center">{error}</p>
-      ) : loading ? (
-        <p className="text-[#0891A0] text-sm text-center">Unlocking vault…</p>
-      ) : null}
+      {/* Status Alert Drawer */}
+      <div className="w-full max-w-xs h-10 flex items-center justify-center mb-8 text-center px-4">
+        {locked ? (
+          <div className="w-full bg-red-50/50 border border-red-100/50 rounded-xl py-2">
+            <p className="text-red-600 text-xs font-medium">Vault Temporarily Locked</p>
+            <p className="text-red-400 text-[10px] font-mono mt-0.5">Try again in {lockTimer}s</p>
+          </div>
+        ) : error ? (
+          <p className="text-red-500 text-xs font-medium bg-red-50/40 border border-red-100/40 rounded-xl py-2 px-4 w-full">{error}</p>
+        ) : loading ? (
+          <span className="text-[10px] tracking-wider font-medium bg-cyan-50/60 text-cyan-700 px-3 py-1 rounded-md uppercase border border-cyan-100/40 font-mono">
+            Unlocking...
+          </span>
+        ) : null}
+      </div>
 
-      {/* Numpad */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Clean Grid Pad Framework - Weight shifted away from heavy font-bold */}
+      <div className="w-full max-w-xs grid grid-cols-3 gap-x-5 gap-y-4 px-4 mb-12">
         {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={() => {
               if (key === '⌫') handleBackspace();
               else if (key !== '') handleDigit(key);
             }}
             disabled={key === '' || locked || loading}
-            className={`h-14 rounded-2xl text-xl font-medium transition-all active:scale-95 select-none ${
+            className={`h-12 rounded-xl text-base font-medium flex items-center justify-center transition-all outline-none select-none ${
               key === ''
                 ? 'opacity-0 pointer-events-none'
                 : locked || loading
-                ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                ? 'text-slate-300 bg-transparent cursor-not-allowed'
                 : key === '⌫'
-                ? 'bg-[#B8FCFC] text-[#065666] hover:bg-[#9EF5F5]'
-                : 'bg-[#B8FCFC]/40 text-gray-800 hover:bg-[#B8FCFC]'
+                ? 'text-slate-400 active:scale-95'
+                : 'bg-white border border-amber-100/30 text-slate-600 hover:border-amber-200/50 active:scale-95'
             }`}
           >
-            {key}
+            {key === '⌫' ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.211-.211.498-.33.796-.33H19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-9.284c-.298 0-.585-.119-.796-.33z" />
+              </svg>
+            ) : key}
           </button>
         ))}
       </div>
 
-      {/* Forgot PIN */}
+      {/* Primary Action Footer Anchor Link */}
       {onForgotPin && (
         <button
+          type="button"
           onClick={onForgotPin}
-          className="w-full text-sm text-gray-400 hover:text-[#FF5E00] py-2 transition-colors"
+          className="text-xs font-medium text-[#FF5E00]/80 hover:text-[#FF9F1C] transition-colors tracking-wide font-mono py-2"
         >
-          Forgot PIN? Recover with phrase
+          Recover via Phrase
         </button>
       )}
     </div>
