@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<OnboardStep>('intro');
   const [publicKey, setPublicKey] = useState('');
 
-  // Profile fields â€” Level 0 requirements
+  // Profile fields -- Level 0 requirements
   const [displayName, setDisplayName] = useState('');
   const [country, setCountry] = useState('Philippines');
   const [phone, setPhone] = useState('');
@@ -123,7 +123,7 @@ export default function RegisterPage() {
           }),
         });
       } catch {
-        // Non-fatal â€” the account still works locally even if this sync fails.
+        // Non-fatal -- the account still works locally even if this sync fails.
         // The user isn't blocked from finishing onboarding over a backend hiccup.
       }
 
