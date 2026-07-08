@@ -45,35 +45,22 @@ export function CreateAccount({ onComplete, onBack }: CreateAccountProps) {
     setError('');
   }
 
-  function handleCreateAccount() {
-    if (pin.length !== PIN_LENGTH || confirmPin.length !== PIN_LENGTH) return;
+async function handleCreateAccount() {
+  if (pin.length !== PIN_LENGTH || confirmPin.length !== PIN_LENGTH) return;
+  if (pin !== confirmPin) { /* existing mismatch handling */ }
 
-    if (pin !== confirmPin) {
-      setError('PINs do not match. Please start over.');
-      setPin('');
-      setConfirmPin('');
-      setActiveField('pin');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    // Securely initialize enclave keys without blocking on phrase generation
-    setTimeout(() => {
-      try {
-        const mockKey = '0x' + Array.from({ length: 40 }, () => 
-          Math.floor(Math.random() * 16).toString(16)
-        ).join('');
-        
-        setLoading(false);
-        onComplete(mockKey);
-      } catch (err) {
-        setError('Failed to securely initialize hardware vaults.');
-        setLoading(false);
-      }
-    }, 1200);
+  setLoading(true);
+  setError('');
+  try {
+    const { walletService } = await import('@/lib/wallet');
+    const publicKey = await walletService.createPinAccount(pin);
+    onComplete(publicKey);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to securely initialize hardware vaults.');
+  } finally {
+    setLoading(false);
   }
+}
 
   const currentDisplayLength = activeField === 'pin' ? pin.length : confirmPin.length;
 
