@@ -120,9 +120,19 @@ export async function loadHistory(account: string | null | undefined): Promise<H
       .filter((entry): entry is HistoryEntry => Boolean(entry));
 
     const merged = [...localEntries, ...horizonEntries];
-    const deduped = merged.filter(
-      (entry, index, all) => all.findIndex((candidate) => candidate.id === entry.id) === index,
-    );
+
+    // Prefer the local entry when a transaction hash appears in both — it has
+    // richer context (vault names, etc.) than what Horizon alone can tell us.
+    const seenHashes = new Set<string>();
+    const deduped: HistoryEntry[] = [];
+    for (const entry of merged) {
+      const dedupeKey = entry.hash ?? entry.id;
+      if (seenHashes.has(dedupeKey)) {
+        continue;
+      }
+      seenHashes.add(dedupeKey);
+      deduped.push(entry);
+    }
 
     return deduped.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 12);
   } catch {
