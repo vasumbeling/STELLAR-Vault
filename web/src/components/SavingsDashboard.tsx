@@ -30,7 +30,42 @@ import History from './History';
 import Profile from './Profile';
 import Vaults from './Vaults';
 import CreateVault from './vault/CreateVault';
+import QRCodeDisplay from './QRCodeDisplay';
+import QRScanner from './QRScanner';
 import { loadProfile, loadTrustScore, type UserProfile, type TrustScore } from '@/lib/auth/verification';
+
+const STELLAR_ADDRESS_RE = /^G[A-Z2-7]{55}$/;
+
+/** Builds a `stellar:` payment URI so scanning apps can prefill destination + amount. */
+function buildPaymentUri(address: string, amount?: string): string {
+  if (!amount || Number(amount) <= 0) return address;
+  return `stellar:${address}?amount=${encodeURIComponent(amount)}`;
+}
+
+/** Parses a scanned QR payload into an address + optional amount. Accepts a bare
+ *  Stellar public key, a `stellar:` URI, or a `web+stellar:pay` URI. */
+function parseScannedPayload(raw: string): { address: string | null; amount: string | null } {
+  const trimmed = raw.trim();
+
+  if (STELLAR_ADDRESS_RE.test(trimmed)) {
+    return { address: trimmed, amount: null };
+  }
+
+  try {
+    const withoutScheme = trimmed.replace(/^web\+stellar:pay\??/i, '').replace(/^stellar:/i, '');
+    const [maybeAddress, query] = withoutScheme.split('?');
+    const params = new URLSearchParams(query ?? '');
+    const address = (params.get('destination') || maybeAddress || '').trim();
+    const amount = params.get('amount');
+    if (STELLAR_ADDRESS_RE.test(address)) {
+      return { address, amount };
+    }
+  } catch {
+    // fall through to failure below
+  }
+
+  return { address: null, amount: null };
+}
 
 interface WalletContextProps {
   publicKey: string | null;
@@ -137,6 +172,9 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
   // Sub-mode selectors
   const [sendMode, setSendMode] = useState<'amount' | 'qr'>('amount');
   const [receiveMode, setReceiveMode] = useState<'address' | 'qr'>('address');
+  const [receiveRequestAmount, setReceiveRequestAmount] = useState('');
+  const [scanError, setScanError] = useState('');
+  const [scannedOk, setScannedOk] = useState(false);
   const [needsPin, setNeedsPin] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -251,6 +289,13 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
   useEffect(() => subscribeToTransferState(() => setTransferState(getTransferState())), []);
 
   useEffect(() => {
+    if (panel !== 'send' || sendMode !== 'qr') {
+      setScanError('');
+      setScannedOk(false);
+    }
+  }, [panel, sendMode]);
+
+  useEffect(() => {
     void refreshPendingApproval();
   }, [refreshPendingApproval]);
 
@@ -273,6 +318,25 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
       // ignore
     }
   };
+
+  const handleQrScanResult = useCallback((raw: string) => {
+    const { address, amount } = parseScannedPayload(raw);
+    if (!address) {
+      setScanError('That QR code did not contain a valid Stellar address.');
+      setScannedOk(false);
+      return;
+    }
+    setRecipient(address);
+    if (amount) setTransferAmount(amount);
+    setScanError('');
+    setError('');
+    setScannedOk(true);
+    // Give the person a beat to see the "found" state before flipping to the form.
+    setTimeout(() => {
+      setSendMode('amount');
+      setScannedOk(false);
+    }, 700);
+  }, []);
 
   const runWithReauth = async (action: () => Promise<void>) => {
     try {
@@ -417,7 +481,7 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
   const purchasingPowerSaved = walletUsdcBalance * (phpRate * 0.06);
 
 return (
-  <div className="max-w-md mx-auto min-h-210 bg-[#FAF8F5] rounded-[2.5rem] overflow-hidden shadow-xl relative flex flex-col justify-between font-sans tracking-tight border border-slate-200/40 text-[#1A1A1A]">
+  <div className="max-w-md mx-auto min-h-210 bg-[#fffdfb] rounded-[2.5rem] overflow-hidden shadow-xl relative flex flex-col justify-between font-sans tracking-tight border border-slate-200/40 text-[#1A1A1A]">
     
     <div className="flex-1 pb-36 overflow-y-auto">
       <div className="px-6 pt-7 flex justify-between items-center" />
@@ -600,20 +664,30 @@ return (
                             </button>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center py-4 space-y-2 animate-fadeIn">
-                            <div className="w-28 h-28 bg-white border border-slate-100 p-2 rounded-xl flex items-center justify-center relative">
-                              <div className="absolute inset-0 bg-slate-50 flex items-center justify-center rounded-xl">
-                                <div className="w-16 h-16 border-2 border-slate-800 flex flex-wrap p-1 gap-1 bg-white">
-                                  <div className="w-4 h-4 bg-slate-800" />
-                                  <div className="w-4 h-4 bg-transparent" />
-                                  <div className="w-4 h-4 bg-slate-800" />
-                                  <div className="w-full h-0.5 bg-slate-800" />
-                                  <div className="w-3 h-3 bg-slate-800" />
-                                  <div className="w-5 h-3 bg-slate-800" />
-                                </div>
+                          <div className="flex flex-col items-center justify-center py-2 space-y-3 animate-fadeIn">
+                            <QRCodeDisplay value={buildPaymentUri(publicKey, receiveRequestAmount)} size={176} />
+
+                            <div className="w-full space-y-1">
+                              <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-light">
+                                Request Amount (optional)
+                              </label>
+                              <div className="relative flex items-center">
+                                <input
+                                  type="number"
+                                  value={receiveRequestAmount}
+                                  onChange={(e) => setReceiveRequestAmount(e.target.value)}
+                                  placeholder="0.00"
+                                  className="w-full rounded-xl bg-slate-50 border border-slate-100 pl-4 pr-14 py-2.5 text-xs text-slate-800 outline-none focus:border-[#A0F0F0] transition-colors"
+                                />
+                                <span className="absolute right-4 text-[10px] text-slate-400">USDC</span>
                               </div>
                             </div>
-                            <span className="text-[9px] uppercase tracking-widest text-slate-400 font-light">Awaiting Sync</span>
+
+                            <span className="text-[9px] uppercase tracking-widest text-slate-400 font-light text-center">
+                              {receiveRequestAmount && Number(receiveRequestAmount) > 0
+                                ? `Requesting ${Number(receiveRequestAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC`
+                                : 'Scan to send to this wallet'}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -788,8 +862,20 @@ return (
                             )}
                           </>
                         ) : (
-                          <div className="flex flex-col items-center justify-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center animate-fadeIn">
-                            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-light">Open Camera</span>
+                          <div className="flex flex-col items-center justify-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-3 animate-fadeIn">
+                            <QRScanner
+                              active={panel === 'send' && sendMode === 'qr' && !pendingApproval && !needsPin}
+                              onScan={handleQrScanResult}
+                            />
+                            {scannedOk && (
+                              <p className="flex items-center gap-1 text-[10px] text-emerald-600 font-light">
+                                <SparkleStar className="w-3 h-3" />
+                                Address captured
+                              </p>
+                            )}
+                            {scanError && (
+                              <p className="text-[10px] text-rose-500 font-light text-center px-4">{scanError}</p>
+                            )}
                           </div>
                         )}
                       </div>
