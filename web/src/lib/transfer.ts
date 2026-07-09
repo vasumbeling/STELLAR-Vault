@@ -275,7 +275,7 @@ async function runTransfer(
 
     recordHistoryEntry({
       account: sender,
-      kind: operation === 'deposit' ? 'deposit' : operation === 'withdraw' ? 'withdraw' : 'send',
+      kind: operation === 'deposit' ? 'deposit' : operation === 'withdraw' ? 'withdraw' : 'transfer',
       title: operation === 'deposit' ? 'Vault deposit' : operation === 'withdraw' ? 'Vault withdrawal' : 'USDC sent',
       description: operation === 'deposit'
         ? `Saved ${normalizedAmount.toFixed(7)} USDC into the vault`
