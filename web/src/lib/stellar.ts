@@ -12,14 +12,12 @@ export const HORIZON_URL =
 export const DEFAULT_USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
 export const USDC_ISSUER = process.env.NEXT_PUBLIC_USDC_ISSUER ?? DEFAULT_USDC_ISSUER;
 export const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID ?? '';
-export const USDC_CONTRACT_ID = process.env.NEXT_PUBLIC_USDC_CONTRACT_ID ?? '';
 
 // v15 SDK: use the `rpc` namespace (the old `SorobanRpc` namespace is gone).
 export const server = new rpc.Server(RPC_URL);
-
 export const XLM = Asset.native();
 export const USDC = USDC_ISSUER ? new Asset('USDC', USDC_ISSUER) : null;
-
+export const USDC_CONTRACT_ID = USDC ? USDC.contractId(NETWORK_PASSPHRASE) : '';
 /** Fund a testnet account via Friendbot (~10,000 XLM). */
 export async function fundTestnetAccount(publicKey: string): Promise<void> {
   const res = await fetch(

@@ -218,6 +218,10 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
     try {
       setState(await readSavingsState());
       await loadVaultSummary(publicKey);
+      if (publicKey) {
+        const balances = await fetchBalances(publicKey);
+        setWalletBalances(balances);
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to read contract');
     } finally {
@@ -514,10 +518,9 @@ return (
                   </h1>
                 )}
               </div>
-                
-              <span className="text-xs font-normal tracking-wide text-white/80 block">
-                {showBalance ? `${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
-              </span>
+                <span className="text-xs font-normal tracking-wide text-white/80 block">
+                  {showBalance ? `${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
+                </span>
             </div>
           </div>
 
@@ -928,7 +931,7 @@ return (
         
         {/* === VAULT VIEW PANEL === */}
         {activeTab === 'vaults' && (
-          <Vaults publicKey={publicKey} loading={loading} />
+          <Vaults publicKey={publicKey} loading={loading} onWalletChanged={refresh} />
         )}
 
       </div>

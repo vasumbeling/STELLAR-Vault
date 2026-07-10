@@ -15,11 +15,13 @@ interface VaultData {
   vaultType: string;
   ownerPubkey: string;
   createdAt: string;
+  withdrawable?: boolean;
 }
 
 interface VaultsProps {
   publicKey: string | null;
   loading?: boolean;
+  onWalletChanged?: () => void | Promise<void>;
 }
 
 type VaultSubTab = 'owned' | 'joined';
@@ -96,7 +98,7 @@ function VaultCard({ vault, onChanged }: { vault: VaultData; onChanged: () => vo
     }
   };
 
-  const withdrawDisabled = vault.vaultType !== 'Personal' || vault.status !== 'Active';
+  const withdrawDisabled = vault.vaultType !== 'Personal' || !vault.withdrawable;
 
   return (
     <div className="p-6 rounded-3xl bg-white border border-slate-200/60 shadow-md shadow-slate-900/5 space-y-3">
@@ -230,7 +232,7 @@ function VaultCard({ vault, onChanged }: { vault: VaultData; onChanged: () => vo
   );
 }
 
-export default function Vaults({ publicKey, loading: parentLoading }: VaultsProps) {
+export default function Vaults({ publicKey, loading: parentLoading, onWalletChanged }: VaultsProps) {
   const [subTab, setSubTab] = useState<VaultSubTab>('owned');
   const [owned, setOwned] = useState<VaultData[]>([]);
   const [joined, setJoined] = useState<VaultData[]>([]);
@@ -258,6 +260,13 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
       setLoading(false);
     }
   }, [publicKey]);
+
+    const handleVaultChanged = useCallback(async () => {
+    await refresh();
+    if (onWalletChanged) {
+      await onWalletChanged();
+    }
+  }, [refresh, onWalletChanged]);
 
   useEffect(() => {
     void refresh();
@@ -332,7 +341,7 @@ export default function Vaults({ publicKey, loading: parentLoading }: VaultsProp
                   : "You haven't joined any vaults yet."}
               </p>
             ) : (
-              activeList.map((v) => <VaultCard key={v.id} vault={v} onChanged={refresh} />)
+              activeList.map((v) => <VaultCard key={v.id} vault={v} onChanged={handleVaultChanged} />)
             )}
           </div>
         </>
