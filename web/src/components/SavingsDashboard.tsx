@@ -32,6 +32,7 @@ import Vaults from './Vaults';
 import CreateVault from './vault/CreateVault';
 import QRCodeDisplay from './QRCodeDisplay';
 import QRScanner from './QRScanner';
+import NotificationBell from './NotificationBell';
 import { loadProfile, loadTrustScore, type UserProfile, type TrustScore } from '@/lib/auth/verification';
 
 const STELLAR_ADDRESS_RE = /^G[A-Z2-7]{55}$/;
@@ -488,7 +489,10 @@ return (
   <div className="max-w-md mx-auto min-h-210 bg-[#fffdfb] rounded-[2.5rem] overflow-hidden shadow-xl relative flex flex-col justify-between font-sans tracking-tight border border-slate-200/40 text-[#1A1A1A]">
     
     <div className="flex-1 pb-36 overflow-y-auto">
-      <div className="px-6 pt-7 flex justify-between items-center" />
+      <div className="px-6 pt-7 flex justify-between items-center">
+        <div />
+        <NotificationBell publicKey={publicKey} />
+      </div>
 
       {activeTab === 'home' && (
         <>
