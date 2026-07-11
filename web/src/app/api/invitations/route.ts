@@ -15,7 +15,14 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     })
 
-    return Response.json(invitations)
+    const serialized = invitations.map((inv) => ({
+      ...inv,
+      vault: inv.vault
+        ? { ...inv.vault, onChainVaultId: inv.vault.onChainVaultId.toString() }
+        : null,
+    }))
+
+    return Response.json(serialized)
   } catch (error) {
     console.error("Invitation list error:", error)
     return Response.json({ error: "Failed to load invitations" }, { status: 500 })
