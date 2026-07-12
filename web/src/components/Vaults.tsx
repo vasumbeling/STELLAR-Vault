@@ -301,13 +301,16 @@ export default function Vaults({
   const [owned, setOwned] = useState<VaultData[]>([]);
   const [joined, setJoined] = useState<VaultData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const refresh = useCallback(async () => {
     if (!publicKey) {
       setOwned([]);
       setJoined([]);
       setLoading(false);
+      setHasLoadedOnce(true);
       return;
     }
     setLoading(true);
@@ -322,6 +325,7 @@ export default function Vaults({
       setError(e instanceof Error ? e.message : 'Failed to load vaults');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, [publicKey]);
 
@@ -364,6 +368,13 @@ export default function Vaults({
 
   const isLoading = loading || parentLoading;
   const activeList = subTab === 'owned' ? owned : joined;
+  const filteredList = search.trim()
+    ? activeList.filter((v) =>
+        v.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+        (v.description ?? '').toLowerCase().includes(search.trim().toLowerCase())
+      )
+    : activeList;
+
 
   return (
     <div className="px-6 py-2 space-y-6 animate-fade-in">
@@ -394,7 +405,7 @@ export default function Vaults({
         </p>
       ) : (
         <>
-          <MyInvitations onResponded={refresh} />
+          <MyInvitations onResponded={refresh} focusVaultId={focusVaultId} onFocusHandled={onFocusHandled} />
 
           {error && (
             <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2.5">
@@ -421,19 +432,37 @@ export default function Vaults({
             </button>
           </div>
 
-          <div className="space-y-3">
-            {isLoading ? (
+          <div className="relative">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search vaults…"
+            className="w-full rounded-xl bg-slate-50 border border-slate-100 pl-9 pr-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-[#A0F0F0] transition-colors"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0a7.5 7.5 0 10-10.6 0 7.5 7.5 0 0010.6 0z" />
+          </svg>
+        </div>
+
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+            {isLoading && !hasLoadedOnce ? (
               <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
                 Loading…
               </p>
-            ) : activeList.length === 0 ? (
+            ) : filteredList.length === 0 ? (
               <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
-                {subTab === 'owned'
-                  ? "You don't own any vaults yet."
-                  : "You haven't joined any vaults yet."}
+                {search.trim()
+                  ? 'No vaults match your search.'
+                  : subTab === 'owned'
+                    ? "You don't own any vaults yet."
+                    : "You haven't joined any vaults yet."}
               </p>
             ) : (
-              activeList.map((v) => (
+              filteredList.map((v) => (
                 <div
                   key={v.id}
                   ref={(el) => {

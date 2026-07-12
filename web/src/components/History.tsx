@@ -44,7 +44,7 @@ export default function History({ history, loading, onRefresh }: HistoryProps) {
         </button>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
         {history.length === 0 ? (
           <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
             No localized network block events recorded on this public key.
@@ -64,7 +64,8 @@ export default function History({ history, loading, onRefresh }: HistoryProps) {
                 <div className="text-right shrink-0">
                   <span className="text-xs font-semibold text-slate-800">{entry.amount.toFixed(2)}</span>
                   <p className="text-[10px] text-slate-400 mt-0.5 font-normal">
-                    {new Date(entry.timestamp).toLocaleDateString()}
+                    {new Date(entry.timestamp).toLocaleDateString()}{' '}
+                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>

@@ -496,6 +496,14 @@ return (
             onNavigateToVault={(vaultId) => {
               setActiveTab('vaults');
               setFocusVaultId(vaultId);
+              const onNavigateToVault = (vaultId: string) => {
+                setActiveTab('vaults');
+                setFocusVaultId(vaultId);
+                // Safety net: clear automatically if nothing ever matches it.
+                setTimeout(() => {
+                  setFocusVaultId((current) => (current === vaultId ? null : current));
+                }, 4000);
+              };
             }}
           />
       </div>
