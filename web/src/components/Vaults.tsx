@@ -301,6 +301,7 @@ export default function Vaults({
   const [owned, setOwned] = useState<VaultData[]>([]);
   const [joined, setJoined] = useState<VaultData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
@@ -308,6 +309,7 @@ export default function Vaults({
       setOwned([]);
       setJoined([]);
       setLoading(false);
+      setHasLoadedOnce(true);
       return;
     }
     setLoading(true);
@@ -322,6 +324,7 @@ export default function Vaults({
       setError(e instanceof Error ? e.message : 'Failed to load vaults');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, [publicKey]);
 
@@ -422,7 +425,7 @@ export default function Vaults({
           </div>
 
           <div className="space-y-3">
-            {isLoading ? (
+            {isLoading && !hasLoadedOnce ? (
               <p className="p-6 rounded-3xl bg-white border border-slate-200/60 text-xs font-normal text-slate-400 text-center shadow-md shadow-slate-900/5">
                 Loading…
               </p>
