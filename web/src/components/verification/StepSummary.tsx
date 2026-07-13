@@ -13,6 +13,7 @@ const idTypeLabels: Record<string, string> = {
   school: "School ID",
   employer: "Employer ID",
   coop: "Cooperative membership ID",
+  barangay: "Barangay certificate",
 };
 
 export default function StepSummary({ data, onBack, onSubmit, submitted }: StepSummaryProps) {
