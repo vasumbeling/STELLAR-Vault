@@ -80,11 +80,13 @@ export async function POST(request: Request) {
       )
     }
 
-    await prisma.user.upsert({
-      where: { pubkey: ownerPubkey },
-      update: {},
-      create: { pubkey: ownerPubkey },
-    })
+    const owner = await prisma.user.findUnique({ where: { pubkey: ownerPubkey } })
+    if (!owner) {
+      return Response.json(
+        { error: "Owner has no registered user account yet" },
+        { status: 404 }
+      )
+    }
 
     const vault = await prisma.vault.create({
       data: {
