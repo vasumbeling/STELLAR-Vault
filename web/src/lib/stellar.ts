@@ -1,5 +1,6 @@
 import { rpc, Networks, Asset } from '@stellar/stellar-sdk';
 import { Keypair } from '@stellar/stellar-sdk';
+import StellarHDWallet from 'stellar-hd-wallet';
 
 // Network passphrase comes from the SDK constant, NOT a hardcoded string —
 // a wrong passphrase shows up as a misleading `tx_bad_auth` error.
@@ -18,6 +19,7 @@ export const server = new rpc.Server(RPC_URL);
 export const XLM = Asset.native();
 export const USDC = USDC_ISSUER ? new Asset('USDC', USDC_ISSUER) : null;
 export const USDC_CONTRACT_ID = USDC ? USDC.contractId(NETWORK_PASSPHRASE) : '';
+
 /** Fund a testnet account via Friendbot (~10,000 XLM). */
 export async function fundTestnetAccount(publicKey: string): Promise<void> {
   const res = await fetch(
@@ -29,12 +31,32 @@ export async function fundTestnetAccount(publicKey: string): Promise<void> {
   }
 }
 
-/** Generate a brand new Stellar keypair for account creation */
+/**
+ * Generate a brand new Stellar keypair backed by a real BIP-39 mnemonic,
+ * derived via SEP-0005 (m/44'/148'/0'). The returned mnemonic is the only
+ * way to recover this account later — callers must show it to the user
+ * once and must never persist it (localStorage, network, logs, etc).
+ */
 export function generateKeypair() {
-  const keypair = Keypair.random();
+  const mnemonic = StellarHDWallet.generateMnemonic(); // 24 words, BIP-39
+  const wallet = StellarHDWallet.fromMnemonic(mnemonic);
   return {
-    publicKey: keypair.publicKey(),
-    secretKey: keypair.secret(),
+    publicKey: wallet.getPublicKey(0),
+    secretKey: wallet.getSecret(0),
+    mnemonic,
+  };
+}
+
+/**
+ * Re-derive the same keypair (account index 0) from a previously generated
+ * recovery phrase. Used by the /recover flow — the mnemonic should only
+ * ever live in memory for the duration of this call.
+ */
+export function keypairFromMnemonic(mnemonic: string) {
+  const wallet = StellarHDWallet.fromMnemonic(mnemonic.trim());
+  return {
+    publicKey: wallet.getPublicKey(0),
+    secretKey: wallet.getSecret(0),
   };
 }
 
