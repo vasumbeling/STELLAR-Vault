@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { RecoveryPhrase } from './RecoveryPhrase';
 
 interface CreateAccountProps {
   onComplete: (publicKey: string) => void;
@@ -15,6 +16,12 @@ export function CreateAccount({ onComplete, onBack }: CreateAccountProps) {
   const [activeField, setActiveField] = useState<'pin' | 'confirm'>('pin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // New: once the account is created we hold onto its keys here until the
+  // user has confirmed they saved the recovery phrase, then we call onComplete.
+  const [stage, setStage] = useState<'pin' | 'recovery'>('pin');
+  const [pendingPublicKey, setPendingPublicKey] = useState('');
+  const [pendingMnemonic, setPendingMnemonic] = useState('');
 
   function handleDigit(digit: string) {
     if (activeField === 'pin') {
@@ -45,22 +52,46 @@ export function CreateAccount({ onComplete, onBack }: CreateAccountProps) {
     setError('');
   }
 
-async function handleCreateAccount() {
-  if (pin.length !== PIN_LENGTH || confirmPin.length !== PIN_LENGTH) return;
-  if (pin !== confirmPin) { /* existing mismatch handling */ }
+  async function handleCreateAccount() {
+    if (pin.length !== PIN_LENGTH || confirmPin.length !== PIN_LENGTH) return;
+    if (pin !== confirmPin) { /* existing mismatch handling */ }
 
-  setLoading(true);
-  setError('');
-  try {
-    const { walletService } = await import('@/lib/wallet');
-    const publicKey = await walletService.createPinAccount(pin);
-    onComplete(publicKey);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Failed to securely initialize hardware vaults.');
-  } finally {
-    setLoading(false);
+    setLoading(true);
+    setError('');
+    try {
+      const { walletService } = await import('@/lib/wallet');
+      // walletService.createPinAccount must now return the mnemonic generated
+      // in stellar.ts's generateKeypair() alongside the public key, e.g.
+      // { publicKey, mnemonic }. See note below this file.
+      const { publicKey, mnemonic } = await walletService.createPinAccount(pin);
+      setPendingPublicKey(publicKey);
+      setPendingMnemonic(mnemonic);
+      setStage('recovery');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to securely initialize hardware vaults.');
+    } finally {
+      setLoading(false);
+    }
   }
-}
+
+  if (stage === 'recovery') {
+    return (
+      <RecoveryPhrase
+        mnemonic={pendingMnemonic}
+        onConfirmed={() => onComplete(pendingPublicKey)}
+        onBack={() => {
+          // User backed out before confirming the phrase — return to PIN
+          // entry rather than leaving them on a half-created account.
+          setStage('pin');
+          setPin('');
+          setConfirmPin('');
+          setActiveField('pin');
+          setPendingPublicKey('');
+          setPendingMnemonic('');
+        }}
+      />
+    );
+  }
 
   const currentDisplayLength = activeField === 'pin' ? pin.length : confirmPin.length;
 
