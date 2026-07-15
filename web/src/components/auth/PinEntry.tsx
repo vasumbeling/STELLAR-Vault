@@ -74,7 +74,14 @@ export function PinEntry({ onSuccess, onForgotPin }: PinEntryProps) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
 
-      if (newAttempts >= MAX_ATTEMPTS) {
+      const message = e instanceof Error ? e.message : 'Incorrect PIN';
+      const isWrongPin = message === 'Incorrect PIN';
+
+      if (!isWrongPin) {
+        setAttempts(attempts);
+        setError(message);
+      }
+      else if (newAttempts >= MAX_ATTEMPTS) {
         setLocked(true);
         setLockTimer(30);
         setError(`Too many attempts. Try again in 30 seconds.`);

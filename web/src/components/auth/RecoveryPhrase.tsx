@@ -2,35 +2,14 @@
 
 import { useState, useEffect } from 'react';
 
-const WORD_SAMPLE = [
-  'abandon','ability','able','about','above','absent','absorb','abstract',
-  'absurd','abuse','access','accident','account','accuse','achieve','acid',
-  'acoustic','acquire','across','action','actor','actual','adapt','add',
-  'addict','address','adjust','admit','adult','advance','advice','aerobic',
-  'afford','afraid','again','agent','agree','ahead','aim','air','airport',
-  'aisle','alarm','album','alcohol','alert','alien','alley','allow','almost',
-  'alone','alpha','already','also','alter','always','amateur','amazing',
-  'among','amount','amused','analyst','anchor','ancient','anger','angle',
-  'angry','animal','ankle','announce','annual','another','answer','antenna',
-  'antique','anxiety','apart','april','arch','arctic','area','arena',
-];
-
-function generatePhrase(): string[] {
-  const words: string[] = [];
-  const arr = new Uint32Array(12);
-  crypto.getRandomValues(arr);
-  for (let i = 0; i < 12; i++) {
-    words.push(WORD_SAMPLE[arr[i] % WORD_SAMPLE.length]);
-  }
-  return words;
-}
-
 interface RecoveryPhraseProps {
+  /** The real BIP-39 mnemonic generated for this account (from stellar.ts's generateKeypair). */
+  mnemonic: string;
   onConfirmed: () => void;
   onBack: () => void;
 }
 
-export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
+export function RecoveryPhrase({ mnemonic, onConfirmed, onBack }: RecoveryPhraseProps) {
   const [phrase, setPhrase] = useState<string[]>([]);
   const [step, setStep] = useState<'show' | 'verify'>('show');
   const [copied, setCopied] = useState(false);
@@ -41,14 +20,15 @@ export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
   const [verifyError, setVerifyError] = useState('');
 
   useEffect(() => {
-    const generated = generatePhrase();
-    setPhrase(generated);
+    const words = mnemonic.trim().split(/\s+/);
+    setPhrase(words);
     const indices = new Set<number>();
-    while (indices.size < 3) {
-      indices.add(Math.floor(Math.random() * 12));
+    const sampleSize = Math.min(3, words.length);
+    while (indices.size < sampleSize) {
+      indices.add(Math.floor(Math.random() * words.length));
     }
     setVerifyIndices([...indices].sort((a, b) => a - b));
-  }, []);
+  }, [mnemonic]);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(phrase.join(' '));
@@ -81,7 +61,7 @@ export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
             </div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tight">Your Secret Backup Phrase</h2>
             <p className="text-sm font-medium text-slate-400 max-w-xs mx-auto leading-relaxed">
-              Write these 12 words down in exact sequence. This is your single recovery pipeline.
+              Write these {phrase.length} words down in exact sequence. This is your only way to recover this account.
             </p>
           </div>
 
@@ -90,7 +70,7 @@ export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
             ⚠️ Never share this phrase with anyone. These words grant sovereign control over your secure vault keys.
           </div>
 
-          {/* 12-Word Secure Layout Grid */}
+          {/* Word Grid */}
           <div className="grid grid-cols-3 gap-2">
             {phrase.map((word, i) => (
               <div
@@ -109,7 +89,7 @@ export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
             onClick={handleCopy}
             className="w-full border border-amber-200/80 bg-white rounded-xl py-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50/20 transition-all font-mono uppercase tracking-wider"
           >
-            {copied ? '✓ Copied to clipboard' : 'Copy setup payload'}
+            {copied ? '✓ Copied to clipboard' : 'Copy recovery phrase'}
           </button>
 
           {/* Acknowledgment Verification */}
@@ -121,7 +101,7 @@ export function RecoveryPhrase({ onConfirmed, onBack }: RecoveryPhraseProps) {
               className="mt-0.5 h-4 w-4 rounded border-amber-300 text-orange-500 focus:ring-orange-400"
             />
             <span className="text-xs font-medium text-slate-400 leading-normal">
-              I have written down all 12 words in the correct order and stored them safely offline.
+              I have written down all {phrase.length} words in the correct order and stored them safely offline.
             </span>
           </label>
 

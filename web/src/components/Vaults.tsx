@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { authFetch, walletService } from '@/lib/wallet';
+import { authFetch, walletService, signWithCurrentAccount } from '@/lib/wallet';
+import { buildDistributeXDR } from '@/lib/contract';
+import { submitSignedXDR, pollTransaction } from '@/lib/payment';
 import { depositUSDC, withdrawUSDC } from '@/lib/transfer';
 import InviteMemberModal from './vault/InviteMemberModal';
 import PendingConfirmations from './vault/PendingConfirmations';
@@ -106,6 +108,25 @@ function VaultCard({
       }
       setError(message);
       setBusy(false);
+    }
+  };
+
+  const [distributing, setDistributing] = useState(false);
+  const [distributeError, setDistributeError] = useState('');
+
+  const runDistribute = async () => {
+    setDistributing(true);
+    setDistributeError('');
+    try {
+      const xdr = await buildDistributeXDR(vault.ownerPubkey, vault.onChainVaultId);
+      const signedXdr = await signWithCurrentAccount(xdr);
+      const hash = await submitSignedXDR(signedXdr);
+      await pollTransaction(hash);
+      onChanged();
+    } catch (e: unknown) {
+      setDistributeError(e instanceof Error ? e.message : 'Distribution failed');
+    } finally {
+      setDistributing(false);
     }
   };
 
@@ -284,6 +305,18 @@ function VaultCard({
             ownerPubkey={vault.ownerPubkey}
             onConfirmed={onChanged}
           />
+          {isOwned && vault.vaultType === 'Collaborative' && vault.status === 'GoalReached' && (
+            <div className="pt-1">
+              {distributeError && <p className="text-[10px] text-rose-500 pb-1.5">{distributeError}</p>}
+              <button
+                onClick={runDistribute}
+                disabled={distributing}
+                className="w-full py-2.5 rounded-xl bg-emerald-500 text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-50"
+              >
+                {distributing ? 'Distributing…' : 'Distribute to Members'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ function serializeVault(vault: { onChainVaultId: bigint; [key: string]: unknown 
 
 export async function GET(request: Request) {
   try {
-    const auth = verifyAuth(request)
+    const auth = await verifyAuth(request)
 
     if (!auth) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = verifyAuth(request)
+    const auth = await verifyAuth(request)
 
     if (!auth) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
@@ -80,11 +80,13 @@ export async function POST(request: Request) {
       )
     }
 
-    await prisma.user.upsert({
-      where: { pubkey: ownerPubkey },
-      update: {},
-      create: { pubkey: ownerPubkey },
-    })
+    const owner = await prisma.user.findUnique({ where: { pubkey: ownerPubkey } })
+    if (!owner) {
+      return Response.json(
+        { error: "Owner has no registered user account yet" },
+        { status: 404 }
+      )
+    }
 
     const vault = await prisma.vault.create({
       data: {

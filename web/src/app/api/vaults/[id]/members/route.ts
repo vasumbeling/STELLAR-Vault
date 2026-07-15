@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = verifyAuth(request)
+    const auth = await verifyAuth(request)
 
     if (!auth) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
@@ -56,7 +56,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = verifyAuth(request)
+    const auth = await verifyAuth(request)
 
     if (!auth) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
@@ -92,11 +92,10 @@ export async function POST(
       )
     }
 
-    await prisma.user.upsert({
-      where: { pubkey },
-      update: {},
-      create: { pubkey },
-    })
+    const memberUser = await prisma.user.findUnique({ where: { pubkey } })
+    if (!memberUser || memberUser.deletedAt) {
+      return Response.json({ error: "This pubkey has no active user account" }, { status: 404 })
+    }
 
     const member = await prisma.vaultMember.create({
       data: {

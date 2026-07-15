@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/verifyAuth"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = verifyAuth(request)
+  const auth = await verifyAuth(request)
   if (!auth) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = verifyAuth(request)
+  const auth = await verifyAuth(request)
   if (!auth) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }

@@ -340,3 +340,33 @@ export async function buildAddMemberXDR(
 
   return rpc.assembleTransaction(tx, sim).build().toXDR();
 }
+
+export async function buildDistributeXDR(
+  owner: string,
+  vaultId: string | number,
+): Promise<string> {
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(owner);
+  const resolvedVaultId = resolveVaultId(vaultId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'distribute',
+        nativeToScVal(Address.fromString(owner), { type: 'address' }),
+        nativeToScVal(BigInt(resolvedVaultId), { type: 'u64' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the distribute call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}

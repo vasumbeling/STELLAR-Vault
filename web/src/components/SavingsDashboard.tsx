@@ -81,7 +81,8 @@ interface WalletContextProps {
 
 interface DashboardProps {
   publicKey: string | null;
-  wallet: WalletContextProps; 
+  wallet: WalletContextProps;
+  onLogout: () => void | Promise<void>; 
 }
 
 type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | 'create' | null;
@@ -143,7 +144,7 @@ function NavIcon({ type, active }: { type: Tab; active: boolean }) {
 
 const SESSION_KEY_MISSING_MESSAGE = 'Your session key is unavailable. Please unlock your account again.';
 
-export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) {
+export default function SavingsDashboard({ publicKey, wallet, onLogout }: DashboardProps) {
   const configured = contractConfigured();
   const [state, setState] = useState<SavingsState | null>(null);
   const [walletBalances, setWalletBalances] = useState<Balances | null>(null);
@@ -191,10 +192,6 @@ export default function SavingsDashboard({ publicKey, wallet }: DashboardProps) 
     const n = Number(v);
     return isFinite(n) ? n : 0;
   };
-
-  const onLogout = useCallback(() => {
-    wallet.disconnect?.();
-  }, [wallet]);
 
   const loadVaultSummary = useCallback(async (key: string | null) => {
     if (!key) {

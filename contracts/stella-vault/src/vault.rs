@@ -29,6 +29,7 @@ pub enum Error {
     AlreadyApproved = 12,
     InsufficientApprovals = 13,
     InvalidGoal = 14,
+    NoContributions = 15
 }
 
 // ---------------------------------------------------------------------
@@ -181,6 +182,10 @@ impl VaultContract {
 
     pub fn get_contribution(env: Env, vault_id: u64, address: Address) -> i128 {
         Self::get_contribution_impl(env, vault_id, address)
+    }
+
+    pub fn distribute(env: Env, caller: Address, vault_id: u64) -> Result<(), Error> {
+        Self::distribute_impl(env, caller, vault_id)
     }
 
     pub fn add_member(

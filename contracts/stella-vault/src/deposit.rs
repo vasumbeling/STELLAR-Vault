@@ -35,6 +35,12 @@ impl VaultContract {
             }
         }
 
+        // Collaborative vaults are capped at the goal — once it's reached, no
+        // more can go in until it's distributed and reset.
+        if vault.vault_type == VaultType::Collaborative && vault.balance + amount > vault.goal_amount {
+            return Err(Error::InvalidAmount);
+        }
+
         // Custody model: funds move from the depositor straight into this
         // contract's own address via the token's Stellar Asset Contract (SAC)
         // interface. The contract — not any individual — holds the balance.

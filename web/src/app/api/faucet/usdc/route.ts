@@ -15,7 +15,7 @@ const horizon = new Horizon.Server(HORIZON_URL)
 
 
 export async function POST(request: Request) {
-  const auth = verifyAuth(request)
+  const auth = await verifyAuth(request)
 
   if (!auth) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })

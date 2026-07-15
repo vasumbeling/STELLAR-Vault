@@ -12,6 +12,7 @@ model User {
   username  String?
   avatarUrl String?
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 
   vaults      Vault[]
   invitations Invitation[]

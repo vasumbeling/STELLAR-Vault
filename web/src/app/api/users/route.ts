@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   const users = await prisma.user.findMany({
+    where: { deletedAt: null },
     orderBy: { createdAt: "desc" }
   })
   return Response.json(users)
@@ -14,6 +15,12 @@ export async function POST(request: Request) {
 
     if (!body.pubkey) {
       return Response.json({ error: "pubkey is required" }, { status: 400 })
+    }
+
+    const existing = await prisma.user.findUnique({ where: { pubkey: body.pubkey } })
+
+    if (existing?.deletedAt) {
+      return Response.json({ error: "This account has been deleted" }, { status: 410 })
     }
 
     const user = await prisma.user.upsert({

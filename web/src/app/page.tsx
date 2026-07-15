@@ -141,7 +141,7 @@ export default function Home() {
 
         {/* Stellar Core Performance Interface */}
         <div className="mt-2">
-          <SavingsDashboard key={localRefreshKey} wallet={wallet} publicKey={publicKey} />
+          <SavingsDashboard key={localRefreshKey} wallet={wallet} publicKey={publicKey} onLogout={handleLogout} />
         </div>
         
         {/* Brand System Footer Deck Layout */}
