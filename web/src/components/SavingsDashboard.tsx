@@ -113,7 +113,7 @@ function NavIcon({ type, active }: { type: Tab; active: boolean }) {
   const color = active ? '#1A1A1A' : '#A4B0BE';
   if (type === 'home') {
     return (
-      <svg className="w-5 h-5" fill={active ? '#A0F0F0' : 'none'} stroke={color} strokeWidth="2" viewBox="0 0 24 24">
+      <svg className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
@@ -962,10 +962,10 @@ return (
       </div>
 
       {/* Fixed Floating Dock Menu */}
-      <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/50 px-4 pt-3 pb-7 flex justify-between items-center rounded-t-4xl shadow-sm z-40">
+      <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-4 pt-3 pb-7 flex justify-between items-center z-40">
         {(['home', 'vaults', 'activity', 'profile'] as Tab[]).map((tab) => {
           const isSelected = activeTab === tab;
-          
+
           return (
             <button
               key={tab}
@@ -973,12 +973,15 @@ return (
                 setActiveTab(tab);
                 setPanel(null);
               }}
-              className="flex flex-col items-center justify-center flex-1 relative py-1.5"
+              className="flex-1 flex items-center justify-center"
             >
-              {isSelected && (
-                <div className="absolute w-10 h-10 bg-[#9AFAFA] rounded-xl -z-10 opacity-40 scale-105 transition-all" />
-              )}
-              <NavIcon type={tab} active={isSelected} />
+              <span
+                className={`p-2 rounded-full transition-colors ${
+                  isSelected ? 'bg-slate-100' : 'hover:bg-slate-50'
+                }`}
+              >
+                <NavIcon type={tab} active={isSelected} />
+              </span>
             </button>
           );
         })}
