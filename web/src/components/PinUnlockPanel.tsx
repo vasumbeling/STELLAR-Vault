@@ -25,7 +25,7 @@ export default function PinUnlockPanel({
         inputMode="numeric"
         value={pinInput}
         onChange={(e) => onPinInputChange(e.target.value)}
-        placeholder="••••"
+        placeholder="••••••"
         disabled={unlocking}
         className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3.5 py-2.5 text-xs outline-none focus:border-[#A0F0F0] disabled:opacity-50"
       />

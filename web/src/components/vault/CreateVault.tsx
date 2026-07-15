@@ -118,10 +118,6 @@ export default function CreateVault({
 
   return (
     <div className="bg-white p-5 text-[#1A1A1A] font-mono tracking-tight space-y-4 animate-fadeIn">
-      <div>
-        <h2 className="text-xs uppercase tracking-widest text-slate-400 font-light">New Vault</h2>
-      </div>
-
       <div className="space-y-1">
         <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-light">Vault Name</label>
         <input
@@ -212,7 +208,7 @@ export default function CreateVault({
               disabled={unlocking || !pinInput}
               className="flex-1 rounded-xl bg-linear-to-r from-[#FF9F1C] to-[#F37A00] text-white py-2.5 text-[10px] uppercase tracking-widest font-normal disabled:opacity-40"
             >
-              {unlocking ? 'Creating…' : 'New'}
+              {unlocking ? 'Creating…' : 'Create Vault'}
             </button>
             <button
               onClick={() => { setNeedsPin(false); setPinInput(''); setPinError(''); }}
@@ -227,7 +223,7 @@ export default function CreateVault({
 
       {status === 'success' && (
         <div className="p-3 text-[11px] text-emerald-600 font-light">
-          <p>Vault create successfully.</p>
+          <p>Vault created successfully.</p>
         </div>
       )}
 
