@@ -73,27 +73,6 @@ export default function Home() {
     <main className="min-h-screen w-full bg-[#FAF8F5] text-slate-800 antialiased selection:bg-[#FF5E00]/10 pb-16">
       <div className="mx-auto max-w-md px-4 py-8">
 
-        {/* Core Header Section */}
-        <header className="mb-6 flex items-center justify-between gap-4 px-1">
-          <div>
-            <div className="flex items-center gap-2.5">
-              {/* Handled Mascot Replacement */}
-              <div className="w-7 h-7 relative shrink-0">
-                <Image
-                  src="/stellamascot.png"
-                  alt="Stella Mascot"
-                  fill
-                  priority
-                  sizes="28px"
-                  className="object-contain"
-                />
-              </div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">STELLA Vault</h1>
-            </div>
-          </div>
-          <ConnectWallet {...wallet} />
-        </header>
-
         {/* Empty Wallet State Frame */}
         {!publicKey && !connecting && (
           <div className="mb-5 rounded-[2.2rem] border border-orange-100/30 bg-white/60 backdrop-blur-md py-10 px-6 text-center shadow-xs">
@@ -127,21 +106,25 @@ export default function Home() {
           </div>
         )}
 
-        {/* On-Chain Pipeline Interaction Gate */}
-        {publicKey && (
-          <div className="mb-5 flex flex-wrap items-center gap-2 px-1">
-            <div className="flex-1 min-w-35">
-              <FundAccount publicKey={publicKey} onFunded={refresh} />
-            </div>
-            <div className="flex-1 min-w-35">
-              <AddTrustline publicKey={publicKey} onDone={refresh} />
-            </div>
-          </div>
-        )}
-
         {/* Stellar Core Performance Interface */}
         <div className="mt-2">
-          <SavingsDashboard key={localRefreshKey} wallet={wallet} publicKey={publicKey} onLogout={handleLogout} />
+          <SavingsDashboard
+            key={localRefreshKey}
+            wallet={wallet}
+            publicKey={publicKey}
+            onLogout={handleLogout}
+            headerActions={
+              <>
+                {publicKey && (
+                  <>
+                    <FundAccount publicKey={publicKey} onFunded={refresh} />
+                    <AddTrustline publicKey={publicKey} onDone={refresh} />
+                  </>
+                )}
+                <ConnectWallet {...wallet} />
+              </>
+            }
+          />
         </div>
         
         {/* Brand System Footer Deck Layout */}

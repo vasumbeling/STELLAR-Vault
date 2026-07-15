@@ -82,7 +82,8 @@ interface WalletContextProps {
 interface DashboardProps {
   publicKey: string | null;
   wallet: WalletContextProps;
-  onLogout: () => void | Promise<void>; 
+  onLogout: () => void | Promise<void>;
+  headerActions?: React.ReactNode;
 }
 
 type Panel = 'deposit' | 'withdraw' | 'receive' | 'send' | 'create' | null;
@@ -144,7 +145,7 @@ function NavIcon({ type, active }: { type: Tab; active: boolean }) {
 
 const SESSION_KEY_MISSING_MESSAGE = 'Your session key is unavailable. Please unlock your account again.';
 
-export default function SavingsDashboard({ publicKey, wallet, onLogout }: DashboardProps) {
+export default function SavingsDashboard({ publicKey, wallet, onLogout, headerActions }: DashboardProps) {
   const configured = contractConfigured();
   const [state, setState] = useState<SavingsState | null>(null);
   const [walletBalances, setWalletBalances] = useState<Balances | null>(null);
@@ -488,6 +489,8 @@ return (
     <div className="flex-1 pb-36 overflow-y-auto">
       <div className="px-6 pt-7 flex justify-between items-center">
         <div />
+        <div className="flex items-center gap-1">
+          {headerActions}
           <NotificationBell
             publicKey={publicKey}
             onNavigateToVault={(vaultId) => {
@@ -503,6 +506,7 @@ return (
               };
             }}
           />
+        </div>
       </div>
 
       {activeTab === 'home' && (
