@@ -208,33 +208,6 @@ export default function RegisterPage() {
                   Log in
                 </button>
               </div>
-
-              {/* Grid Feature Matrix Nodes */}
-              <div className="w-full max-w-xs grid grid-cols-2 gap-3 px-2 pt-2">
-                <div className="bg-white border border-amber-100/20 p-3.5 rounded-xl flex flex-col justify-between space-y-1 shadow-xs">
-                  <div className="text-[#FF9F1C]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-semibold text-slate-700">Quick Setup</h4>
-                    <p className="text-[10px] font-normal text-slate-400 mt-0.5">Ready in 2 mins</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-amber-100/20 p-3.5 rounded-xl flex flex-col justify-between space-y-1 shadow-xs">
-                  <div className="text-[#FF9F1C]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879-.659c1.546-1.16 2.699-2.74 3.62-4.476C14.805 7.9 14.15 6 12 6c-1.34 0-2.344.664-2.88 1.636" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-semibold text-slate-700">High Yield</h4>
-                    <p className="text-[10px] font-normal text-slate-400 mt-0.5">Grow your funds</p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -300,7 +273,7 @@ export default function RegisterPage() {
                   <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Phone number</label>
                   <div className="flex gap-2">
                     <span className="border border-slate-200 rounded-xl px-3 py-3 text-xs font-medium bg-slate-50 text-slate-500 flex items-center">
-                      ðŸ‡µðŸ‡­ +63
+                      +63
                     </span>
                     <input
                       type="tel"
@@ -371,7 +344,7 @@ export default function RegisterPage() {
 
               {/* Grid Number Input Pad Layout */}
               <div className="grid grid-cols-3 gap-x-4 gap-y-3 px-2">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'âŒ«'].map((key, idx) => (
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'X'].map((key, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -427,7 +400,7 @@ export default function RegisterPage() {
         {/* Brand System Footer Deck Layout */}
         <div className="flex flex-col items-center space-y-4 pt-12">
           <span className="text-[10px] font-normal text-slate-400 tracking-normal">
-            Â© 2026 Team Ada's Lovelies. All rights reserved.
+            © 2026 Team Ada's Lovelies. All rights reserved.
           </span>
         </div>
 

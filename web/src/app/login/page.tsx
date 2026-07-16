@@ -54,14 +54,8 @@ export default function LoginPage() {
 
         {/* Brand System Footer Deck Layout */}
         <div className="flex flex-col items-center space-y-4 pt-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#EAE4FC]/50 text-[#5438A8] rounded-full border border-[#D5C9FA]/40 font-mono tracking-wider text-[9px] font-medium uppercase">
-            <svg className="w-3 h-3 text-[#5438A8]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-            </svg>
-            End-to-End Encrypted
-          </div>
           <span className="text-[10px] font-normal text-slate-400 tracking-normal">
-            © 2026 STELLA Financial Services. All rights reserved.
+            © 2026 Team Ada's Lovelies. All rights reserved.
           </span>
         </div>
 

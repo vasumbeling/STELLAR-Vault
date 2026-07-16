@@ -1,7 +1,7 @@
 'use client';
 
 import { SparkleStar } from '@/app/icons';
-import QRScanner from './QRScanner';
+import QRScanner from '@/components/shared/QRScanner';
 import type { PendingTransferApproval } from '@/lib/transfer';
 
 export default function SendPanel({

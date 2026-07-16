@@ -1,0 +1,122 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { fundTestnetAccount } from '@/lib/stellar';
+import { fetchBalances } from '@/lib/balances';
+import ActionModal from '@/components/shared/ActionModal';
+
+function FaucetIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 22c4-4 7-7.5 7-11.5A7 7 0 0 0 5 10.5C5 14.5 8 18 12 22z" />
+      <circle cx="12" cy="10.5" r="2.5" />
+    </svg>
+  );
+}
+
+export default function FundAccount({
+  publicKey,
+  onFunded,
+}: {
+  publicKey: string;
+  onFunded: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [justFunded, setJustFunded] = useState(false);
+  const [funded, setFunded] = useState(false);
+
+  const checkFunded = useCallback(async () => {
+    try {
+      const balances = await fetchBalances(publicKey);
+      const isFunded = balances ? ('funded' in balances ? balances.funded : true) : false;
+      setFunded(!!isFunded);
+    } catch {
+      // leave last-known state as-is on a failed check
+    }
+  }, [publicKey]);
+
+  useEffect(() => {
+    void checkFunded();
+  }, [checkFunded]);
+
+  const fund = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await fundTestnetAccount(publicKey);
+      setFunded(true);
+      setJustFunded(true);
+      onFunded();
+      setTimeout(() => setJustFunded(false), 2500);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const badgeClass = funded ? 'bg-cyan-50 text-cyan-600' : 'bg-orange-50 text-orange-500';
+  const statusLabel = funded ? 'Funded' : 'Not Funded';
+  const statusClass = funded ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600';
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="relative p-2 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+        aria-label="Fund account"
+      >
+        <FaucetIcon className={`w-5 h-5 transition-colors ${funded ? 'text-cyan-500' : 'text-orange-500'}`} />
+      </button>
+
+      <ActionModal
+        open={open}
+        onClose={() => setOpen(false)}
+        icon={<FaucetIcon className="w-5 h-5" />}
+        iconClassName={badgeClass}
+        title="Fund Wallet"
+        statusLabel={statusLabel}
+        statusClassName={statusClass}
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] text-slate-400 leading-relaxed text-center">
+            Pull test network assets into this wallet using Friendbot.
+          </p>
+
+          {error && (
+            <p className="text-[10px] font-bold text-rose-500 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-2 text-center">
+              {error}
+            </p>
+          )}
+          {justFunded && !loading && (
+            <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-2 text-center">
+              Wallet funded successfully.
+            </p>
+          )}
+
+          <button
+            onClick={fund}
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center rounded-full bg-linear-to-r from-[#FF9F1C] to-[#F37A00] px-4 py-2.5 text-xs font-black text-white shadow-sm shadow-orange-500/20 hover:opacity-95 transition-all active:scale-[0.97] disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Funding…
+              </span>
+            ) : funded ? (
+              'Fund Again'
+            ) : (
+              'Fund Wallet'
+            )}
+          </button>
+        </div>
+      </ActionModal>
+    </>
+  );
+}
