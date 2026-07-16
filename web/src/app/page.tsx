@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useWallet } from '@/hooks/useWallet';
 import { hasAccount } from '@/lib/auth/storage';
+import { fetchBalances } from '@/lib/balances';
 import ConnectWallet from '@/components/wallet/ConnectWallet';
 import FundAccount from '@/components/wallet/FundAccount';
 import AddTrustline from '@/components/wallet/AddTrustline';
@@ -16,8 +17,30 @@ export default function Home() {
   const { publicKey, connecting, disconnect } = wallet;
   const [localRefreshKey, setLocalRefreshKey] = useState(0);
   const [authChecked, setAuthChecked] = useState(false);
+  const [funded, setFunded] = useState(false);
+  const [linked, setLinked] = useState(false);
 
   const refresh = useCallback(() => setLocalRefreshKey((k) => k + 1), []);
+
+  // Track wallet setup completion so the Fund/Trustline header icons can
+  // disappear once they're no longer needed — they're one-time onboarding
+  // steps, not ongoing controls like Connect or Notifications.
+  useEffect(() => {
+    let ignore = false;
+    if (!publicKey) { setFunded(false); setLinked(false); return; }
+    fetchBalances(publicKey)
+      .then((balances) => {
+        if (ignore) return;
+        setFunded(balances ? ('funded' in balances ? !!balances.funded : true) : false);
+        setLinked(!!balances && 'usdc' in balances);
+      })
+      .catch(() => {
+        if (ignore) return;
+        setFunded(false);
+        setLinked(false);
+      });
+    return () => { ignore = true; };
+  }, [publicKey, localRefreshKey]);
 
   // ── Auth gate ──────────────────────────────────────────────
   useEffect(() => {
@@ -115,13 +138,13 @@ export default function Home() {
             onLogout={handleLogout}
             headerActions={
               <>
-                {publicKey && (
-                  <>
-                    <FundAccount publicKey={publicKey} onFunded={refresh} />
-                    <AddTrustline publicKey={publicKey} onDone={refresh} />
-                  </>
-                )}
                 <ConnectWallet {...wallet} />
+                {publicKey && !funded && (
+                  <FundAccount publicKey={publicKey} onFunded={refresh} />
+                )}
+                {publicKey && !linked && (
+                  <AddTrustline publicKey={publicKey} onDone={refresh} />
+                )}
               </>
             }
           />
