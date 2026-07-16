@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useWallet } from '@/hooks/useWallet';
 import { hasAccount } from '@/lib/auth/storage';
-import ConnectWallet from '@/components/ConnectWallet';
-import FundAccount from '@/components/FundAccount';
-import AddTrustline from '@/components/AddTrustline';
-import SavingsDashboard from '@/components/SavingsDashboard';
+import ConnectWallet from '@/components/wallet/ConnectWallet';
+import FundAccount from '@/components/wallet/FundAccount';
+import AddTrustline from '@/components/wallet/AddTrustline';
+import SavingsDashboard from '@/components/dashboard/SavingsDashboard';
 
 export default function Home() {
   const router = useRouter();

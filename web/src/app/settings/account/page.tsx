@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import AccountSettings from '@/components/AccountSettings';
+import AccountSettings from '@/components/settings/AccountSettings';
 import { useWallet } from '@/hooks/useWallet';
 
 export default function AccountSettingsPage() {

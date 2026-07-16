@@ -4,9 +4,9 @@ import { authFetch, walletService, signWithCurrentAccount } from '@/lib/wallet';
 import { buildDistributeXDR } from '@/lib/contract';
 import { submitSignedXDR, pollTransaction } from '@/lib/payment';
 import { depositUSDC, withdrawUSDC } from '@/lib/transfer';
-import InviteMemberModal from './vault/InviteMemberModal';
-import PendingConfirmations from './vault/PendingConfirmations';
-import MyInvitations from './MyInvitations';
+import InviteMemberModal from '@/components/vault/InviteMemberModal';
+import PendingConfirmations from '@/components/vault/PendingConfirmations';
+import MyInvitations from '@/components/profile/MyInvitations';
 import { RefreshIcon } from '@/app/icons';
 
 interface VaultData {

@@ -23,12 +23,12 @@ import {
   type PendingTransferApproval,
 } from '@/lib/transfer';
 import { loadHistory, type HistoryEntry } from '@/lib/history';
-import Wheel from './Wheel';
-import History from './History';
-import Profile from './Profile';
-import Vaults from './Vaults';
-import CreateVault from './vault/CreateVault';
-import NotificationBell from './NotificationBell';
+import Wheel from '@/components/dashboard/Wheel';
+import History from '@/components/dashboard/History';
+import Profile from '@/components/profile/Profile';
+import Vaults from '@/components/vault/Vaults';
+import CreateVault from '@/components/vault/CreateVault';
+import NotificationBell from '@/components/shared/NotificationBell';
 import { loadProfile, loadTrustScore, type UserProfile, type TrustScore } from '@/lib/auth/verification';
 import { EyeIcon, SparkleStar } from '@/app/icons';
 

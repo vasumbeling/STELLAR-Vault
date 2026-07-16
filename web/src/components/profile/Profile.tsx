@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import Level2Verification from './verification/Level2Verification';
+import Level2Verification from '@/components/verification/Level2Verification';
 import { CheckBadgeIcon, LockIcon, EditIcon, SettingsIcon, SparkleIcon, VaultIcon, StarIcon, ShieldCheckIcon} from '@/app/icons';
 
 interface ProfileProps {
