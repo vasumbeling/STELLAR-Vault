@@ -256,10 +256,9 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout }: Dashbo
     if (!configured) return;
     let ignore = false;
     setLoading(true);
-    setError('');
     readSavingsState()
       .then((next) => { if (!ignore) setState(next); })
-      .catch((e: unknown) => { if (!ignore) setError(e instanceof Error ? e.message : 'Failed to read contract'); })
+      .catch((e: unknown) => { if (!ignore) showToast(e instanceof Error ? e.message : 'Failed to read contract', 'error'); })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
   }, [configured]);
