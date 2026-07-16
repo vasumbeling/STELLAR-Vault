@@ -16,10 +16,6 @@ export default function LinkedAccountsPage() {
 
   return (
     <main className="min-h-screen w-full bg-[#FAF8F5] flex items-center justify-center p-4">
-      {/* Same phone-frame shell as SavingsDashboard/Settings/Account: rounded
-          card, fixed aspect, scrollable content area, floating on the app
-          background — this was missing before, which is what made the page
-          look inconsistent with the rest of the app. */}
       <div className="w-full max-w-md min-h-210 bg-[#fffdfb] rounded-[2.5rem] overflow-hidden shadow-xl relative flex flex-col font-sans tracking-tight border border-slate-200/40 text-[#1A1A1A]">
         <div className="flex-1 overflow-y-auto px-6 pt-7 pb-8">
           <LinkedAccountsSettings
