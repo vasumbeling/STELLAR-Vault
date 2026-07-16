@@ -60,19 +60,19 @@ export default function Profile({
   };
 
   return (
-    <div className="px-5 py-4 space-y-7 animate-fade-in">
-      {/* Top bar */}
-      <div className="flex justify-between items-center px-1">
-        <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">Profile</h3>
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Open settings"
-          className="p-2 -mr-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          <SettingsIcon />
-        </button>
-      </div>
+    <div className="px-6 py-2 space-y-7 animate-fade-in">
+          {/* Top bar */}
+          <div className="flex justify-between items-center px-1">
+            <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">Profile</h3>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Open settings"
+              className="p-2 rounded-full hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center text-slate-400 hover:text-slate-600"
+            >
+              <SettingsIcon className="w-5 h-5 transition-colors" />
+            </button>
+          </div>
 
       {/* Avatar + identity */}
       <div className="flex flex-col items-center gap-3">
