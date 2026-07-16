@@ -33,7 +33,7 @@ import type { UserProfile, TrustScore } from '@/lib/auth/verification';
 import { EyeIcon, SparkleStar, NavIcon } from '@/app/icons';
 
 import PinUnlockPanel from './PinUnlockPanel';
-import DepositReceivePanel from '@components/dashboard/DepositReceivePanel';
+import DepositReceivePanel from '@/components/dashboard/DepositReceivePanel';
 import WithdrawPanel from './WithdrawPanel';
 import SendPanel from './SendPanel';
 import type { Panel, Tab } from '@/lib/dashboardTypes';
