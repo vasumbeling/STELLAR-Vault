@@ -89,10 +89,7 @@ npm run lint
   - USDC: `TODO — fill in issuer G... address (or note if using a testnet mock token)`
 
 ## Team
-- Ezra Ysabela G. Gellecania — @ezraysabela
-- Aiyesha Threa S. Caña — @aiyesha-cn
-- Nicole Marie T. Eduliantes — @Nicole-Marie-Eduliantes
-- Vonne Chelsea Reese A. Sumbeling — @Vonne01010
+
 
 ## License
 Proprietary — All Rights Reserved. Unauthorized copying, distribution, or use of this software, in whole or in part, is strictly prohibited without prior written permission.
