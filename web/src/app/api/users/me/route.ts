@@ -18,7 +18,12 @@ export async function GET(request: Request) {
     return Response.json({ error: "Account not found" }, { status: 404 })
   }
 
-  return Response.json({ profile, trust })
+  const [user, vaultsCount] = await Promise.all([
+    prisma.user.findUnique({ where: { pubkey: auth.pubkey }, select: { points: true } }),
+    prisma.vaultMember.count({ where: { pubkey: auth.pubkey } }),
+  ])
+
+  return Response.json({ profile, trust, points: user?.points ?? 0, vaultsCount })
 }
 
 export async function DELETE(request: Request) {

@@ -105,6 +105,8 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const [copied, setCopied] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trust, setTrust] = useState<TrustScore | null>(null);
+  const [points, setPoints] = useState<number>(0);
+  const [vaultsCount, setVaultsCount] = useState<number>(0);
   const [focusVaultId, setFocusVaultId] = useState<string | null>(null);
 
   // Form states
@@ -197,10 +199,14 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     .then((d) => {
     setProfile(d.profile ?? null);
     setTrust(d.trust ?? null);
+    setPoints(d.points ?? 0);
+    setVaultsCount(d.vaultsCount ?? 0);
     })
     .catch(() => {
     setProfile(null);
     setTrust(null);
+    setPoints(0);
+    setVaultsCount(0);
     });
   }, [publicKey]);
 
@@ -645,6 +651,12 @@ return (
               loading={loading}
               onRefresh={refresh}
               onOpenSettings={() => router.push('/settings')}
+              points={points}
+              vaultsCount={vaultsCount}
+              username={profile?.displayName ?? undefined}
+              phoneVerified={profile?.phoneVerified}
+              phoneNumber={profile?.phoneNumber ?? undefined}
+              identityVerified={profile?.alternativeIdVerified}
             />
           </div>
         )}
