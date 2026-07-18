@@ -29,8 +29,44 @@ import Profile from '@/components/profile/Profile';
 import Vaults from '@/components/vault/Vaults';
 import CreateVault from '@/components/vault/CreateVault';
 import NotificationBell from '@/components/shared/NotificationBell';
-import type { UserProfile, TrustScore } from '@/lib/auth/verification';
+import { useToast } from '@/components/shared/Toast';
+import { loadProfile, loadTrustScore, type UserProfile, type TrustScore } from '@/lib/auth/verification';
 import { EyeIcon, SparkleStar, NavIcon } from '@/app/icons';
+
+/** currentColor-based glyphs so the active tab's orange color can be set by the wrapper. */
+function NavGlyph({ type }: { type: Tab }) {
+  if (type === 'home') {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    );
+  }
+  if (type === 'activity') {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    );
+  }
+  if (type === 'vaults') {
+    return (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    );
+  }
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <circle cx="12" cy="7" r="4"></circle>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    </svg>
+  );
+}
+
 
 import PinUnlockPanel from './PinUnlockPanel';
 import DepositReceivePanel from '@/components/dashboard/DepositReceivePanel';
@@ -88,6 +124,7 @@ const SESSION_KEY_MISSING_MESSAGE = 'Your session key is unavailable. Please unl
 export default function SavingsDashboard({ publicKey, wallet, onLogout, headerActions }: DashboardProps) {
   const router = useRouter();
   const configured = contractConfigured();
+  const { showToast } = useToast();
   const [state, setState] = useState<SavingsState | null>(null);
   const [walletBalances, setWalletBalances] = useState<Balances | null>(null);
   const [vaultSummary, setVaultSummary] = useState<VaultBalanceSummary | null>(null);
@@ -98,8 +135,6 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const [panel, setPanel] = useState<Panel>(null);
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [msg, setMsg] = useState('');
   const [transferState, setTransferState] = useState(getTransferState());
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [copied, setCopied] = useState(false);
@@ -127,7 +162,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const [unlocking, setUnlocking] = useState(false);
   const [pendingRetry, setPendingRetry] = useState<(() => Promise<void>) | null>(null);
 
-  // Pending transfer approval — now backend-backed, fetched async instead of
+  // Pending transfer approval — backend-backed, fetched async instead of
   // read synchronously from localStorage.
   const [pendingApproval, setPendingApproval] = useState<PendingTransferApproval | null>(null);
   const [pendingLoading, setPendingLoading] = useState(false);
@@ -156,7 +191,6 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const refresh = useCallback(async () => {
     if (!configured) return;
     setLoading(true);
-    setError('');
     try {
       setState(await readSavingsState());
       await loadVaultSummary(publicKey);
@@ -165,11 +199,11 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
         setWalletBalances(balances);
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to read contract');
+      showToast(e instanceof Error ? e.message : 'Failed to read contract', 'error');
     } finally {
       setLoading(false);
     }
-  }, [configured, loadVaultSummary, publicKey]);
+  }, [configured, loadVaultSummary, publicKey, showToast]);
 
   const refreshHistory = useCallback(async (address: string | null) => {
     if (!address) { setHistory([]); return; }
@@ -186,11 +220,11 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
       const transfers = await getPendingTransferApprovalsForAddress();
       setPendingApproval(transfers[0] ?? null);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load transfer requests');
+      showToast(e instanceof Error ? e.message : 'Failed to load transfer requests', 'error');
     } finally {
       setPendingLoading(false);
     }
-  }, [publicKey]);
+  }, [publicKey, showToast]);
 
   useEffect(() => {
     if (!publicKey) return;
@@ -214,12 +248,12 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     if (!configured) return;
     let ignore = false;
     setLoading(true);
-    setError('');
     readSavingsState()
       .then((next) => { if (!ignore) setState(next); })
-      .catch((e: unknown) => { if (!ignore) setError(e instanceof Error ? e.message : 'Failed to read contract'); })
+      .catch((e: unknown) => { if (!ignore) showToast(e instanceof Error ? e.message : 'Failed to read contract', 'error'); })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configured]);
 
   useEffect(() => {
@@ -294,7 +328,6 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     setRecipient(address);
     if (amount) setTransferAmount(amount);
     setScanError('');
-    setError('');
     setScannedOk(true);
     // Give the person a beat to see the "found" state before flipping to the form.
     setTimeout(() => {
@@ -337,7 +370,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
 
   const handleDeposit = async () => {
     if (!publicKey || !depositAmount || Number(depositAmount) <= 0) return;
-    setBusy(true); setError(''); setMsg('');
+    setBusy(true);
     try {
       await runWithReauth(async () => {
         const res = await authFetch('/api/faucet/usdc', {
@@ -350,11 +383,11 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
         }
         await refresh();
         await refreshHistory(publicKey);
-        setMsg(`Received ${data.amount} test USDC!`);
+        showToast(`Received ${data.amount} test USDC!`, 'success');
         setPanel(null);
       });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Deposit failed');
+      showToast(e instanceof Error ? e.message : 'Deposit failed', 'error');
     } finally {
       setBusy(false);
       resetTransferState();
@@ -362,20 +395,18 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   };
 
   const handleWithdraw = async () => {
-    setError('');
-    setMsg('');
-    setError('Cashing out is coming soon. Your funds stay safely in your wallet for now.');
+    showToast('Cashing out is coming soon. Your funds stay safely in your wallet for now.', 'info');
   };
 
   const handleTransferRequest = async () => {
     if (!publicKey || !recipient || !transferAmount) return;
-    setBusy(true); setError(''); setMsg('');
+    setBusy(true);
     try {
       await createPendingTransferApproval(recipient, Number(transferAmount));
-      setMsg('Transfer request created. The receiver must approve it before it can be sent.');
+      showToast('Transfer request created. The receiver must approve it before it can be sent.', 'success');
       await refreshPendingApproval();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create transfer request');
+      showToast(e instanceof Error ? e.message : 'Failed to create transfer request', 'error');
     } finally {
       setBusy(false);
     }
@@ -383,13 +414,13 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
 
   const handleApproveAsSender = async () => {
     if (!pendingApproval || !publicKey || pendingApproval.sender !== publicKey) return;
-    setBusy(true); setError('');
+    setBusy(true);
     try {
       await updatePendingTransferApproval(pendingApproval.id);
-      setMsg('Sender approval recorded. Waiting for receiver approval.');
+      showToast('Sender approval recorded. Waiting for receiver approval.', 'success');
       await refreshPendingApproval();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to approve transfer');
+      showToast(e instanceof Error ? e.message : 'Failed to approve transfer', 'error');
     } finally {
       setBusy(false);
     }
@@ -397,13 +428,13 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
 
   const handleApproveAsReceiver = async () => {
     if (!pendingApproval || !publicKey || pendingApproval.recipient !== publicKey) return;
-    setBusy(true); setError('');
+    setBusy(true);
     try {
       await updatePendingTransferApproval(pendingApproval.id);
-      setMsg('Receiver approval recorded. The sender can now submit the transfer.');
+      showToast('Receiver approval recorded. The sender can now submit the transfer.', 'success');
       await refreshPendingApproval();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to approve transfer');
+      showToast(e instanceof Error ? e.message : 'Failed to approve transfer', 'error');
     } finally {
       setBusy(false);
     }
@@ -411,7 +442,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
 
   const handleSubmitApprovedTransfer = async () => {
     if (!pendingApproval || !publicKey || pendingApproval.sender !== publicKey || !pendingApproval.senderAuthorized || !pendingApproval.receiverAuthorized) return;
-    setBusy(true); setError(''); setMsg('');
+    setBusy(true);
     try {
       await runWithReauth(async () => {
         await transferUSDC(pendingApproval.recipient, pendingApproval.amount, {
@@ -422,10 +453,10 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
             await refreshPendingApproval();
           },
         });
-        setMsg('USDC transfer completed successfully!');
+        showToast('USDC transfer completed successfully!', 'success');
       });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Transfer failed');
+      showToast(e instanceof Error ? e.message : 'Transfer failed', 'error');
     } finally {
       setBusy(false);
       resetTransferState();
@@ -437,10 +468,9 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     setBusy(true);
     try {
       await removePendingTransferApproval(pendingApproval.id);
-      setError(''); setMsg('');
       await refreshPendingApproval();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to cancel transfer request');
+      showToast(e instanceof Error ? e.message : 'Failed to cancel transfer request', 'error');
     } finally {
       setBusy(false);
     }
@@ -533,11 +563,9 @@ return (
             {/* Slide Inline Configuration Panels */}
             {panel && (
               <div className="mx-4 mt-2 space-y-3">
-                {(error || msg || transferState.status !== 'idle') && (
+                {(transferState.status !== 'idle') && (
                   <div className="p-3 bg-white rounded-xl border border-slate-100 space-y-1 text-[11px]">
-                    {error && <p className="text-rose-500 font-light">{error}</p>}
-                    {msg && <p className="flex items-center gap-1 text-emerald-600 font-light"><SparkleStar className="w-3 h-3" />{msg}</p>}
-                    {transferState.status !== 'idle' && <p className="text-slate-400 font-light">{transferState.message}</p>}
+                    <p className="text-slate-400 font-light">{transferState.message}</p>
                   </div>
                 )}
 
@@ -615,9 +643,8 @@ return (
                       publicKey={publicKey}
                       onCreated={() => {
                         setPanel(null);
-                        setMsg('Vault initialized.');
+                        showToast('Vault initialized.', 'success');
                         void refresh();
-                        setTimeout(() => setMsg(''), 3000);
                       }}
                     />
                   </div>
