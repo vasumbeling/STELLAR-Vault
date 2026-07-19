@@ -117,12 +117,17 @@ interface DashboardProps {
   wallet: WalletContextProps;
   onLogout: () => void | Promise<void>;
   headerActions?: React.ReactNode;
-  connectWalletAction?: React.ReactNode
+  connectWalletAction?: React.ReactNode;
+  /** The user's actual registered profile (from GET /api/users/[pubkey]).
+   *  Left undefined until it loads, so Profile falls back to its defaults
+   *  rather than flashing a wrong name. */
+  username?: string;
+  avatarSrc?: string;
 }
 
 const SESSION_KEY_MISSING_MESSAGE = 'Your session key is unavailable. Please unlock your account again.';
 
-export default function SavingsDashboard({ publicKey, wallet, onLogout, headerActions, connectWalletAction }: DashboardProps) {
+export default function SavingsDashboard({ publicKey, wallet, onLogout, headerActions, connectWalletAction, username, avatarSrc }: DashboardProps) {
   const router = useRouter();
   const configured = contractConfigured();
   const { showToast } = useToast();
@@ -495,7 +500,7 @@ return (
     
     <div className="flex-1 pb-36 overflow-y-auto">
       {activeTab === 'home' && (
-        <div className="px-6 pt-7 flex justify-between items-center">
+        <div className="px-6 pt-7 flex items-center justify-between gap-1">
           <div className="flex items-center gap-1">
             {headerActions}
           </div>
@@ -679,6 +684,8 @@ return (
               loading={loading}
               onRefresh={refresh}
               onOpenSettings={() => router.push('/settings')}
+              {...(username !== undefined && { username })}
+              {...(avatarSrc !== undefined && { avatarSrc })}
               points={points}
               vaultsCount={vaultsCount}
               username={profile?.displayName ?? undefined}

@@ -1,5 +1,6 @@
 import "dotenv/config"
 import { prisma } from "@/lib/prisma"
+import { verifyAuth } from "@/lib/verifyAuth"
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -23,6 +24,18 @@ export async function POST(request: Request) {
       return Response.json({ error: "This account has been deleted" }, { status: 410 })
     }
 
+    // Only require auth for touching an EXISTING record — first-time
+    // creation happens during onboarding, before the caller necessarily
+    // has an authenticated session yet, so gating that too broke
+    // registration entirely. Once a row exists, though, only its owner
+    // may update it.
+    if (existing) {
+      const auth = await verifyAuth(request)
+      if (!auth || auth.pubkey !== body.pubkey) {
+        return Response.json({ error: "Cannot modify another user's profile" }, { status: 403 })
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { pubkey: body.pubkey },
       update: {
@@ -44,4 +57,4 @@ export async function POST(request: Request) {
     console.error("User upsert error:", error)
     return Response.json({ error: "Failed to save user" }, { status: 500 })
   }
-} 
+}

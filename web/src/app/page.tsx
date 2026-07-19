@@ -19,9 +19,28 @@ export default function Home() {
   const [authChecked, setAuthChecked] = useState(false);
   const [funded, setFunded] = useState(false);
   const [linked, setLinked] = useState(false);
+  const [profile, setProfile] = useState<{ username?: string; avatarUrl?: string } | null>(null);
 
   const refresh = useCallback(() => setLocalRefreshKey((k) => k + 1), []);
 
+  // Pull the profile set at registration (POST /api/users in the
+  // onboarding flow) so Profile shows the real username/avatar instead of
+  // its hardcoded placeholder defaults.
+  useEffect(() => {
+    let ignore = false;
+    if (!publicKey) { setProfile(null); return; }
+    fetch(`/api/users/${publicKey}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((user) => {
+        if (!ignore) setProfile(user);
+      })
+      .catch(() => {
+        if (!ignore) setProfile(null);
+      });
+    return () => { ignore = true; };
+  }, [publicKey, localRefreshKey]);
+
+  
   // Track wallet setup completion so the Fund/Trustline header icons can
   // disappear once they're no longer needed — they're one-time onboarding
   // steps, not ongoing controls like Connect or Notifications.
@@ -135,6 +154,8 @@ export default function Home() {
             wallet={wallet}
             publicKey={publicKey}
             onLogout={handleLogout}
+            username={profile?.username ?? undefined}
+            avatarSrc={profile?.avatarUrl ?? undefined}
             headerActions={
               <>
                 {publicKey && !funded && (

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Level2Verification from '@/components/verification/Level2Verification';
+import EditProfileModal from '@/components/profile/EditProfileModal';
 import { CheckBadgeIcon, LockIcon, EditIcon, SettingsIcon } from '@/app/icons';
 
 interface ProfileProps {
@@ -31,10 +32,12 @@ interface ProfileProps {
   communityTrustUnlocked?: boolean;
   onVerifyIdentity?: () => void;
   onOpenSettings?: () => void;
+  onProfileUpdated?: (next: { username: string; avatarSrc: string }) => void;
 }
 
 export default function Profile({
   wallet,
+  publicKey,
   username = 'Starry Voyager',
   handle = 'stella_user_882',
   vaultsCount = 12,
@@ -46,8 +49,15 @@ export default function Profile({
   communityTrustUnlocked = false,
   onVerifyIdentity,
   onOpenSettings,
+  onProfileUpdated,
 }: ProfileProps) {
   const { network } = wallet || {};
+
+  // Local copies so the header updates immediately after a save, without
+  // waiting on the parent to refetch and pass new props back down.
+  const [localUsername, setLocalUsername] = useState(username);
+  const [localAvatarSrc, setLocalAvatarSrc] = useState(avatarSrc);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   // Controls the Level 2 verification modal. Kept local to Profile since the
   // gate + wizard is self-contained; onVerifyIdentity is still fired so a
@@ -60,26 +70,26 @@ export default function Profile({
   };
 
   return (
-    <div className="px-6 py-2 space-y-7 animate-fade-in">
-          {/* Top bar */}
-          <div className="flex justify-between items-center px-1">
-            <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">Profile</h3>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              aria-label="Open settings"
-              className="p-2 rounded-full hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center text-slate-400 hover:text-slate-600"
-            >
-              <SettingsIcon className="w-5 h-5 transition-colors" />
-            </button>
-          </div>
+    <div className="px-5 py-4 space-y-7 animate-fade-in">
+      {/* Top bar */}
+      <div className="flex justify-between items-center px-1">
+        <h3 className="text-xl font-semibold text-[#FF5E00] tracking-tight">Profile</h3>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Open settings"
+          className="p-2 -mr-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          <SettingsIcon />
+        </button>
+      </div>
 
       {/* Avatar + identity */}
       <div className="flex flex-col items-center gap-3">
         <div className="relative w-20 h-20">
           <div className="w-20 h-20 rounded-full bg-linear-to-b from-orange-50 to-orange-100 border-4 border-white shadow-md shadow-orange-900/10 overflow-hidden relative">
             <Image
-              src={avatarSrc}
+              src={localAvatarSrc}
               alt="Profile avatar"
               fill
               priority
@@ -89,15 +99,17 @@ export default function Profile({
           </div>
           <button
             type="button"
-            aria-label="Edit avatar"
-            className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#FF5E00] text-white flex items-center justify-center border-2 border-white shadow-sm cursor-pointer hover:bg-[#e65300] transition-colors"
+            aria-label="Edit profile"
+            onClick={() => setShowEditProfile(true)}
+            disabled={!publicKey}
+            className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#FF5E00] text-white flex items-center justify-center border-2 border-white shadow-sm cursor-pointer hover:bg-[#e65300] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <EditIcon />
           </button>
         </div>
 
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-slate-800 tracking-tight">{username}</h2>
+          <h2 className="text-lg font-semibold text-slate-800 tracking-tight">{localUsername}</h2>
           <p className="text-xs font-medium text-slate-400">@{handle}</p>
         </div>
 
@@ -113,7 +125,9 @@ export default function Profile({
         </div>
       </div>
 
-      {/* Progressive identity */}
+      {/* Progressive identity — one card, one row per level, only the
+          actionable level expands with a CTA. Collapsing levels 1 and 3 to
+          single rows keeps the whole ladder scannable at a glance. */}
       <div className="space-y-2.5">
         <div className="px-1">
           <h3 className="text-sm font-semibold text-slate-800 tracking-tight">Progressive Identity</h3>
@@ -164,11 +178,28 @@ export default function Profile({
         </div>
       </div>
 
+      {/* Edit profile modal — editing needs a pubkey to save against */}
+      {publicKey && (
+        <EditProfileModal
+          open={showEditProfile}
+          onClose={() => setShowEditProfile(false)}
+          publicKey={publicKey}
+          currentUsername={localUsername}
+          currentAvatarSrc={localAvatarSrc}
+          onSaved={(next) => {
+            setLocalUsername(next.username);
+            setLocalAvatarSrc(next.avatarSrc);
+            onProfileUpdated?.(next);
+          }}
+        />
+      )}
+
       {/* Level 2 verification modal */}
       {showLevel2 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4"
           onClick={(e) => {
+            // close only when clicking the backdrop, not the modal card itself
             if (e.target === e.currentTarget) setShowLevel2(false);
           }}
         >
@@ -177,6 +208,8 @@ export default function Profile({
             verifiedPhone={phoneNumber}
             onClose={() => setShowLevel2(false)}
             onComplete={() => {
+              // Close on success; parent should refetch identityVerified via onVerifyIdentity
+              // or its own data source once the backend call in StepSummary confirms.
               setShowLevel2(false);
             }}
           />
