@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
-export type ToastVariant = 'success' | 'error' | 'info';
+export type ToastVariant = 'success' | 'error' | 'info' | 'warning' | 'action_required';
 
 export interface Toast {
   id: string;
@@ -81,6 +81,24 @@ const VARIANT_STYLES: Record<ToastVariant, { border: string; icon: React.ReactNo
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+      </svg>
+    ),
+  },
+  warning: {
+    border: 'border-amber-300/60',
+    iconBg: 'bg-amber-50 text-amber-600',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 3.75h.008M10.125 3.75L1.5 18.75A1.5 1.5 0 002.874 21h18.252a1.5 1.5 0 001.374-2.25L13.875 3.75a1.5 1.5 0 00-2.625 0z" />
+      </svg>
+    ),
+  },
+  action_required: {
+    border: 'border-rose-200/60',
+    iconBg: 'bg-rose-50 text-rose-600',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },

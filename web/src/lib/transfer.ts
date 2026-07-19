@@ -4,6 +4,7 @@ import { buildContributeXDR, buildWithdrawXDR } from './contract';
 import { buildPaymentXDR, pollTransaction, submitSignedXDR } from './payment';
 import { walletService, signWithCurrentAccount, authFetch } from './wallet';
 import { recordHistoryEntry } from './history';
+import { createAppNotification } from './notifications';
 
 export type TransferOperation = 'deposit' | 'withdraw' | 'transfer';
 export type TransferStatus =
@@ -124,11 +125,34 @@ async function signXdr(xdr: string): Promise<string> {
   return signWithCurrentAccount(xdr);
 }
 
-async function submitAndConfirm(signedXdr: string): Promise<string> {
+async function submitAndConfirm(signedXdr: string, operation: TransferOperation, vaultId?: string | number): Promise<string> {
   setState({ status: 'submitting', message: 'Broadcasting transaction…' });
+  await createAppNotification({
+    message: operation === 'deposit'
+      ? 'Deposit transaction submitted to the blockchain.'
+      : operation === 'withdraw'
+        ? 'Withdrawal transaction submitted to the blockchain.'
+        : 'Transfer transaction submitted to the blockchain.',
+    vaultId: vaultId !== undefined ? String(vaultId) : null,
+    variant: 'info',
+    meta: { event: 'transaction_submitted', operation, timestamp: new Date().toISOString() },
+  }).catch(() => undefined);
+
   const hash = await submitSignedXDR(signedXdr);
   setState({ status: 'pending_confirmation', message: 'Waiting for confirmation…' });
   await pollTransaction(hash);
+
+  await createAppNotification({
+    message: operation === 'deposit'
+      ? 'Deposit transaction confirmed on-chain.'
+      : operation === 'withdraw'
+        ? 'Withdrawal transaction confirmed on-chain.'
+        : 'Transfer transaction confirmed on-chain.',
+    vaultId: vaultId !== undefined ? String(vaultId) : null,
+    variant: 'success',
+    meta: { event: 'transaction_confirmed', operation, hash, timestamp: new Date().toISOString() },
+  }).catch(() => undefined);
+
   return hash;
 }
 
@@ -168,7 +192,21 @@ async function runTransfer(
 
     setState({ status: 'waiting_for_signature', message: 'Waiting for wallet approval…' });
     const signedXdr = await signXdr(xdr);
-    const hash = await submitAndConfirm(signedXdr);
+    const hash = await submitAndConfirm(signedXdr, operation, vaultId);
+
+    if (operation === 'deposit' || operation === 'withdraw') {
+      const eventRes = await authFetch(`/api/vaults/${String(vaultId)}/events`, {
+        method: 'POST',
+        body: JSON.stringify({
+          eventType: operation === 'deposit' ? 'deposit' : 'withdraw',
+          amount: normalizedAmount,
+        }),
+      });
+      const eventData = await eventRes.json().catch(() => null);
+      if (!eventRes.ok) {
+        throw new Error(eventData?.error ?? 'Vault update failed after the transaction confirmed.');
+      }
+    }
 
     const result: TransferResult = {
       hash,
@@ -212,6 +250,16 @@ async function runTransfer(
     return result;
   } catch (error) {
     const message = formatError(error);
+    await createAppNotification({
+      message: operation === 'deposit'
+        ? `Deposit failed: ${message}`
+        : operation === 'withdraw'
+          ? `Withdrawal failed: ${message}`
+          : `Transfer failed: ${message}`,
+      vaultId: vaultId !== undefined ? String(vaultId) : null,
+      variant: 'error',
+      meta: { event: 'transaction_failed', operation, error: message, timestamp: new Date().toISOString() },
+    }).catch(() => undefined);
     setState({ status: 'failed', message, error: message, result: null });
     throw new Error(message);
   }

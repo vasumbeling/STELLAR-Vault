@@ -12,6 +12,7 @@ import { buildDistributeXDR,
          buildUpdateLockXDR, 
          buildRemoveMemberXDR, 
          buildCloseVaultXDR } from '@/lib/contract';
+import { createAppNotification } from '@/lib/notifications';
 
 interface VaultData {
   id: string;
@@ -112,11 +113,13 @@ function VaultCard({
   const [proposalActionError, setProposalActionError] = useState('');
 
   useEffect(() => {
-    if (highlighted) {
-      setShowHighlight(true);
-      const t = setTimeout(() => setShowHighlight(false), 2500);
-      return () => clearTimeout(t);
-    }
+    if (!highlighted) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowHighlight(false);
+    }, 2500);
+
+    return () => window.clearTimeout(timeoutId);
   }, [highlighted]);
 
   const openAction = (a: MoneyAction) => {
@@ -167,11 +170,30 @@ function VaultCard({
     try {
       const xdr = await buildDistributeXDR(vault.ownerPubkey, vault.onChainVaultId);
       const signedXdr = await signWithCurrentAccount(xdr);
+      await createAppNotification({
+        message: 'Distribution transaction submitted to the blockchain.',
+        vaultId: vault.id,
+        variant: 'info',
+        meta: { event: 'transaction_submitted', operation: 'distribute', timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
       const hash = await submitSignedXDR(signedXdr);
       await pollTransaction(hash);
+      await createAppNotification({
+        message: 'Distribution transaction confirmed on-chain.',
+        vaultId: vault.id,
+        variant: 'success',
+        meta: { event: 'transaction_confirmed', operation: 'distribute', hash, timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
       onChanged();
     } catch (e: unknown) {
-      setDistributeError(e instanceof Error ? e.message : 'Distribution failed');
+      const message = e instanceof Error ? e.message : 'Distribution failed';
+      await createAppNotification({
+        message: `Distribution failed: ${message}`,
+        vaultId: vault.id,
+        variant: 'error',
+        meta: { event: 'transaction_failed', operation: 'distribute', error: message, timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
+      setDistributeError(message);
     } finally {
       setDistributing(false);
     }
@@ -789,7 +811,10 @@ export default function Vaults({
   }, [refresh, onWalletChanged]);
 
   useEffect(() => {
-    void refresh();
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refresh]);
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -805,15 +830,19 @@ export default function Vaults({
       return;
     }
 
-    setSubTab(inOwned ? 'owned' : 'joined');
+    window.setTimeout(() => {
+      setSubTab(inOwned ? 'owned' : 'joined');
+    }, 0);
 
     const timeout = setTimeout(() => {
+    // Wait a tick for the tab switch to render the target card before scrolling.
+    const timeout = window.setTimeout(() => {
       const el = cardRefs.current.get(focusVaultId);
       el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       onFocusHandled?.();
     }, 50);
 
-    return () => clearTimeout(timeout);
+    return () => window.clearTimeout(timeout);
   }, [focusVaultId, owned, joined, onFocusHandled]);
 
   const isLoading = loading || parentLoading;
