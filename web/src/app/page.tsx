@@ -101,7 +101,7 @@ export default function Home() {
     return (
       <main className="min-h-screen w-full bg-[#FAF6F0] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6C5DD3] border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FF9F1C] border-t-transparent" />
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             Checking session…
           </p>
@@ -129,20 +129,19 @@ export default function Home() {
               />
             </div>
             <p className="text-xs font-black text-slate-800 mb-1.5 uppercase tracking-wide">
-              Authorization Credentials Required
+              Connect your wallet
             </p>
             <p className="text-[11px] font-semibold text-slate-400 leading-relaxed max-w-xs mx-auto">
-              Connect your Freighter hardware or browser layer extension to configure your profile token variables.
-              If needed,{' '}
-              
-                <a href="https://freighter.app"
+              Link your Freighter wallet to see your balance and start saving.
+              Don't have it yet?{' '}
+              <a href="https://freighter.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-black text-[#FF5E00] hover:underline"
               >
-                Install Freighter Extension
+                Install Freighter
               </a>{' '}
-              and switch the runtime to Test Net mode.
+              and switch it to Test Net.
             </p>
           </div>
         )}

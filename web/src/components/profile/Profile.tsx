@@ -156,7 +156,7 @@ export default function Profile({
             {!identityVerified && (
               <button
                 onClick={handleLevelUpClick}
-                className="w-full py-2 rounded-xl bg-[#FF5E00] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#e65300] active:scale-95 transition-all cursor-pointer"
+                className="w-full py-2 rounded-xl bg-linear-to-br from-[#FFB238] via-[#FF9F1C] to-[#F37A00] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#e65300] active:scale-95 transition-all cursor-pointer"
               >
                 Level Up
               </button>
