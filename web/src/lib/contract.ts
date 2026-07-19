@@ -370,3 +370,130 @@ export async function buildDistributeXDR(
 
   return rpc.assembleTransaction(tx, sim).build().toXDR();
 }
+
+export async function buildUpdateGoalXDR(
+  owner: string,
+  vaultId: string | number,
+  newGoalAmount: number,
+): Promise<string> {
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(owner);
+  const resolvedVaultId = resolveVaultId(vaultId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'update_goal',
+        nativeToScVal(Address.fromString(owner), { type: 'address' }),
+        nativeToScVal(BigInt(resolvedVaultId), { type: 'u64' }),
+        nativeToScVal(BigInt(Math.round(newGoalAmount * STROOPS_PER_UNIT)), { type: 'i128' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the update_goal call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}
+
+export async function buildUpdateLockXDR(
+  owner: string,
+  vaultId: string | number,
+  newLockUntil: number,
+): Promise<string> {
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(owner);
+  const resolvedVaultId = resolveVaultId(vaultId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'update_lock',
+        nativeToScVal(Address.fromString(owner), { type: 'address' }),
+        nativeToScVal(BigInt(resolvedVaultId), { type: 'u64' }),
+        nativeToScVal(BigInt(Math.trunc(newLockUntil)), { type: 'u64' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the update_lock call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}
+
+/** caller can be the owner removing someone else, or a member removing themselves. */
+export async function buildRemoveMemberXDR(
+  caller: string,
+  vaultId: string | number,
+  member: string,
+): Promise<string> {
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(caller);
+  const resolvedVaultId = resolveVaultId(vaultId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'remove_member',
+        nativeToScVal(Address.fromString(caller), { type: 'address' }),
+        nativeToScVal(BigInt(resolvedVaultId), { type: 'u64' }),
+        nativeToScVal(Address.fromString(member), { type: 'address' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the remove_member call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}
+
+export async function buildCloseVaultXDR(
+  owner: string,
+  vaultId: string | number,
+): Promise<string> {
+  const contract = new Contract(CONTRACT_ID);
+  const account = await server.getAccount(owner);
+  const resolvedVaultId = resolveVaultId(vaultId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        'close_vault',
+        nativeToScVal(Address.fromString(owner), { type: 'address' }),
+        nativeToScVal(BigInt(resolvedVaultId), { type: 'u64' }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    throw new Error('Simulation failed — the close_vault call would not succeed.');
+  }
+
+  return rpc.assembleTransaction(tx, sim).build().toXDR();
+}

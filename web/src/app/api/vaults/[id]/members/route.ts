@@ -4,51 +4,21 @@ import { verifyAuth } from "@/lib/verifyAuth"
 import { logActivity } from "@/lib/logActivity"
 import { Prisma } from "@prisma/client"
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const auth = await verifyAuth(request)
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAuth(request);
+  if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!auth) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 })
-    }
+  const { id: vaultId } = await params;
+  const isMember = await prisma.vaultMember.findUnique({
+    where: { vaultId_pubkey: { vaultId, pubkey: auth.pubkey } },
+  });
+  if (!isMember) return Response.json({ error: "Not a member of this vault" }, { status: 403 });
 
-    const { id: vaultId } = await params
-
-    const vault = await prisma.vault.findUnique({
-      where: { id: vaultId }
-    })
-
-    if (!vault) {
-      return Response.json({ error: "Vault not found" }, { status: 404 })
-    }
-
-    const isMember = await prisma.vaultMember.findUnique({
-      where: { vaultId_pubkey: { vaultId, pubkey: auth.pubkey } }
-    })
-
-    if (!isMember) {
-      return Response.json(
-        { error: "You do not have access to this vault's members" },
-        { status: 403 }
-      )
-    }
-
-    const members = await prisma.vaultMember.findMany({
-      where: { vaultId },
-      orderBy: { addedAt: "asc" }
-    })
-
-    return Response.json(members)
-  } catch (error) {
-    console.error("Member list error:", error)
-    return Response.json(
-      { error: "Failed to fetch members" },
-      { status: 500 }
-    )
-  }
+  const members = await prisma.vaultMember.findMany({
+    where: { vaultId },
+    orderBy: { addedAt: "asc" },
+  });
+  return Response.json(members);
 }
 
 export async function POST(

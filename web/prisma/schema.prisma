@@ -70,8 +70,33 @@ model Vault {
   invitations Invitation[]
   logs        ActivityLog[]
   members     VaultMember[]
+  proposals VaultProposal []
 
   @@unique([contractAddress, onChainVaultId])
+}
+
+model VaultProposal {
+  id         String   @id @default(cuid())
+  vaultId    String
+  proposedBy String
+  type       String   // "edit_goal" | "edit_lock" | "delete"
+  changes    Json?    // { targetAmount? } for edit_goal | { lockUntil? } for edit_lock | null for delete
+  status     String   @default("pending") // pending | approved | rejected | executed
+  createdAt  DateTime @default(now())
+
+  vault     Vault                   @relation(fields: [vaultId], references: [id])
+  approvals VaultProposalApproval[]
+}
+
+model VaultProposalApproval {
+  id         String   @id @default(cuid())
+  proposalId String
+  pubkey     String
+  createdAt  DateTime @default(now())
+
+  proposal VaultProposal @relation(fields: [proposalId], references: [id])
+
+  @@unique([proposalId, pubkey])
 }
 
 model VaultMember {
