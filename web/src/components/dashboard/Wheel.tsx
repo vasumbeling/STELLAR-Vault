@@ -20,16 +20,14 @@ interface WheelProps {
   setPanel: (panel: Panel) => void;
 }
 
-// Fixed slot angles ordered clockwise to accurately match the visual mockup placement geometry[cite: 1]
 const SLOTS = [
-  { angle: 0,    tab: 'home', panel: 'deposit'  as Panel, label: "Deposit"  },
-  { angle: -72,  tab: 'home', panel: 'withdraw' as Panel, label: "Withdraw" },
-  { angle: -144, tab: 'home', panel: 'create'   as Panel, label: "Vault"     },
-  { angle: -216, tab: 'home', panel: 'receive'  as Panel, label: "Receive"  },
-  { angle: -288, tab: 'home', panel: 'send'     as Panel, label: "Send"     },
+  { angle: 0,    tab: 'home', panel: 'deposit'  as Panel, label: "Deposit",  desc: "Securely add funds to your wallet and keep it in USDC value." },
+  { angle: -72,  tab: 'home', panel: 'withdraw' as Panel, label: "Withdraw", desc: "Instantly pull assets back from your wallet." },
+  { angle: -144, tab: 'home', panel: 'create'   as Panel, label: "Vault",    desc: "Create a new customized multi-sig secure vault (savings account)." },
+  { angle: -216, tab: 'home', panel: 'receive'  as Panel, label: "Receive",  desc: "Display your public address and QR code to receive funds." },
+  { angle: -288, tab: 'home', panel: 'send'     as Panel, label: "Send",     desc: "Transfer digital assets globally with ultra-low fees." },
 ];
 
-// Scattered background particles pre-distributed all around the 360-degree perimeter
 const GLOBAL_PARTICLES = [
   { angle: -15,  radius: 46, size: 'w-1.5 h-1.5', delay: '0.1s' },
   { angle: -35,  radius: 54, size: 'w-1 h-1',     delay: '0.5s' },
@@ -67,8 +65,8 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  const targetSlot = SLOTS.find(s => s.panel === panel) || SLOTS[0];
-  const currentRotation = isDragging ? dragRotation : targetSlot.angle;
+  const targetSlot = SLOTS.find(s => s.panel === panel) || null;
+  const currentRotation = isDragging ? dragRotation : (targetSlot?.angle ?? 0);
 
   const getAngleFromCenter = (clientX: number, clientY: number) => {
     if (!wheelRef.current) return 0;
@@ -114,15 +112,15 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
 
   const transitionStyle = isDragging
     ? 'none'
-    : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)'; // Matches visual mockup frame snap[cite: 1]
+    : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
 
   return (
     <section className="relative flex flex-col items-center justify-center select-none w-full my-6">
       
-      {/* Dynamic Background Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-linear-to-br from-orange-200/20 via-cyan-200/10 to-transparent blur-2xl pointer-events-none" />
+      {/* Dynamic Background Radial Glow[cite: 1] */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-linear-to-br from-orange-200/15 via-cyan-200/5 to-transparent blur-2xl pointer-events-none" />
       
-      {/* Structural Track Ring Boundary */}
+      {/* Structural Track Ring Boundary[cite: 1] */}
       <div
         ref={wheelRef}
         onPointerDown={handlePointerDown}
@@ -134,22 +132,20 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
         }`}
         style={{ touchAction: 'none' }}
       >
-        {/* Rotatable Outer Node & Particle Frame */}
+        {/* Rotatable Outer Node & Particle Frame[cite: 1] */}
         <div
           className="absolute inset-0 rounded-full"
           style={{ transform: `rotate(${currentRotation}deg)`, transition: transitionStyle }}
         >
-          {/* Scattered Orbiting Particles */}
+          {/* Scattered Orbiting Particles[cite: 1] */}
           {GLOBAL_PARTICLES.map((p, pIndex) => {
-            // Convert coordinate physics relative to wheel center
             const pRad = ((p.angle - 90) * Math.PI) / 180;
             const px = 50 + p.radius * Math.cos(pRad);
             const py = 50 + p.radius * Math.sin(pRad);
 
-            // Dynamically calculate if particle falls near the current action node's angle
-            // targetSlot.angle represents the top anchor, so we track relative distance
+            // Check proximity to active anchor top node if an action is actually selected[cite: 1]
             const relativeAngle = ((p.angle + currentRotation) % 360 + 360) % 360;
-            const isNearActiveNode = relativeAngle < 35 || relativeAngle > 325;
+            const isNearActiveNode = panel !== null && (relativeAngle < 35 || relativeAngle > 325);
 
             return (
               <div
@@ -157,7 +153,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
                 className={`absolute rounded-full transition-all duration-500 pointer-events-none ${p.size} ${
                   isNearActiveNode 
                     ? 'bg-cyan-400 shadow-[0_0_6px_#22d3ee] scale-125 opacity-90' 
-                    : 'bg-orange-400/50 opacity-40 shadow-[0_0_3px_rgba(255,159,28,0.2)]'
+                    : 'bg-orange-400/40 opacity-35 shadow-[0_0_3px_rgba(255,159,28,0.15)]'
                 }`}
                 style={{
                   left: `${px}%`,
@@ -170,7 +166,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
             );
           })}
 
-          {/* Action Slots */}
+          {/* Action Slots[cite: 1] */}
           {SLOTS.map((slot, i) => {
             const angleDeg = (i * 72) - 90; 
             const angleRad = (angleDeg * Math.PI) / 180;
@@ -198,7 +194,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                {/* Action Button Circle */}
+                {/* Action Button Circle[cite: 1] */}
                 <button
                   type="button"
                   onPointerDown={(e) => handleIconTap(e, slot)}
@@ -215,7 +211,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
                   {icons[slot.panel ?? '']}
                 </button>
                 
-                {/* Counter-Rotated Context Label */}
+                {/* Counter-Rotated Context Label[cite: 1] */}
                 <div 
                   className="w-24 text-center mt-2 pointer-events-none flex justify-center"
                   style={{
@@ -239,7 +235,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
         {/* Central Stationary Core Dial Hub[cite: 1] */}
         <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center z-20 shadow-[inset_0_2px_10px_rgba(255,159,28,0.05),0_10px_24px_-10px_rgba(180,101,11,0.2)] relative pointer-events-none">
           
-          {/* Central Active Tracking Index Notch */}
+          {/* Central Active Tracking Index Notch[cite: 1] */}
           <div 
             className="absolute inset-1 rounded-full"
             style={{ 
@@ -247,7 +243,9 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
               transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)'
             }}
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#FF9F1C]" />
+            {panel !== null && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-linear-to-br from-[#FF9F1C] shadow-xs shadow-orange-300/80" />
+            )}
           </div>
 
           {/* Decorative Inner Shield[cite: 1] */}
@@ -257,8 +255,17 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* Dynamic Descriptive Panel Metadata System */}
+      <div className="h-20 mt-4 max-w-xs text-center px-4 flex items-center justify-center transition-all duration-300">
+        <p className={`text-xs leading-relaxed transition-all duration-500 ${
+          targetSlot ? 'text-slate-500 opacity-100 transform translate-y-7' : 'text-slate-300 opacity-0 transform translate-y-1'
+        }`}>
+          {targetSlot ? targetSlot.desc : 'Drag or select an action to manage your assets.'}
+        </p>
+      </div>
+
     </section>
   );
 }
