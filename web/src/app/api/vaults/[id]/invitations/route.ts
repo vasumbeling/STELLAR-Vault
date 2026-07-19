@@ -50,6 +50,11 @@ export async function POST(
         pubkey: inviteePubkey,
         message: `You've been invited to join the vault "${vault.name}"`,
         vaultId: vault.id,
+        variant: "action_required",
+        meta: {
+          event: "vault_invitation",
+          vaultName: vault.name,
+        },
       }
     })
 

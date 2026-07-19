@@ -6,6 +6,8 @@ export interface AppNotification {
   message: string;
   read: boolean;
   vaultId: string | null;
+  variant: 'success' | 'info' | 'warning' | 'error' | 'action_required';
+  meta?: Record<string, unknown> | null;
   createdAt: string;
 }
 

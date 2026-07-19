@@ -2,6 +2,7 @@ import "dotenv/config"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/verifyAuth"
 import { logActivity } from "@/lib/logActivity"
+import { createNotification, notifyVaultMembers } from "@/lib/notificationHelpers"
 
 const VALID_EVENT_TYPES = [
   "deposit",
@@ -10,6 +11,8 @@ const VALID_EVENT_TYPES = [
   "withdrawal_approved",
   "withdrawal_executed",
   "vault_closed",
+  "distribution_completed",
+  "distribution_failed",
 ] as const
 
 type EventType = (typeof VALID_EVENT_TYPES)[number]
@@ -104,6 +107,10 @@ async function handleEvent(
       return handleWithdrawalExecuted(vault, body, reporterPubkey)
     case "vault_closed":
       return handleVaultClosed(vault, reporterPubkey)
+    case "distribution_completed":
+      return handleDistributionCompleted(vault, body, reporterPubkey)
+    case "distribution_failed":
+      return handleDistributionFailed(vault, body, reporterPubkey)
   }
 }
 
@@ -127,6 +134,56 @@ async function handleDeposit(vault: Vault, body: Record<string, unknown>, report
     vaultId: vault.id,
     detail: `Deposited ${amount} into "${vault.name}" (new balance: ${newBalance})`,
   })
+
+  const progress = Math.min(100, (newBalance / vault.targetAmount) * 100)
+  const timestamp = new Date().toISOString()
+  const formattedAmount = Number(amount).toFixed(7)
+
+  await createNotification({
+    pubkey: reporterPubkey,
+    vaultId: vault.id,
+    message: `You deposited ${formattedAmount} USDC into "${vault.name}".`,
+    variant: "success",
+    meta: {
+      event: "deposit",
+      amount: formattedAmount,
+      vaultName: vault.name,
+      currentBalance: newBalance,
+      progress,
+      timestamp,
+    },
+  })
+
+  await notifyVaultMembers({
+    vaultId: vault.id,
+    excludePubkeys: [reporterPubkey],
+    message: `${reporterPubkey} deposited ${formattedAmount} USDC into "${vault.name}".`,
+    variant: "info",
+    meta: {
+      event: "deposit",
+      amount: formattedAmount,
+      vaultName: vault.name,
+      currentBalance: newBalance,
+      progress,
+      timestamp,
+    },
+  })
+
+  if (newStatus === "GoalReached") {
+    await notifyVaultMembers({
+      vaultId: vault.id,
+      message: `Collaborative vault "${vault.name}" has reached 100% of its savings goal and is ready for distribution.`,
+      variant: "success",
+      meta: {
+        event: "goal_reached",
+        vaultName: vault.name,
+        currentBalance: newBalance,
+        targetAmount: vault.targetAmount,
+        progress: 100,
+        timestamp,
+      },
+    })
+  }
 
   return {
     data: {
@@ -267,7 +324,18 @@ async function handleVaultClosed(vault: Vault, reporterPubkey: string) {
     detail: `Closed vault "${vault.name}"`,
   })
 
-  return {
+await notifyVaultMembers({
+      vaultId: vault.id,
+      message: `Collaborative vault "${vault.name}" has been closed.`,
+      variant: "info",
+      meta: {
+        event: "vault_closed",
+        vaultName: vault.name,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    return {
     data: {
       ...updated,
       onChainVaultId: updated.onChainVaultId.toString(),
