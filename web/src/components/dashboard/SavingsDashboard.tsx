@@ -524,35 +524,69 @@ return (
 
       {activeTab === 'home' && (
         <>
-          <div className="mx-4 mt-5 p-6 rounded-2xl bg-linear-to-br from-[#FF9F1C] to-[#F37A00] text-white shadow-md relative overflow-hidden">
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-28 h-28 bg-white/10 rounded-xl pointer-events-none before:content-[''] before:absolute before:-top-4 before:left-1/2 before:-translate-x-1/2 before:w-16 before:h-16 before:border-[6px] before:border-white/10 before:rounded-t-full" />
-            <div className="absolute right-14 top-1/2 -translate-y-1/2 w-3 h-3 bg-white/20 rounded-full pointer-events-none" />
+          <div className="mx-4 mt-5 p-6 rounded-3xl bg-linear-to-br from-[#FFB238] via-[#FF9F1C] to-[#F37A00] text-white shadow-[0_18px_38px_-14px_rgba(227,122,0,0.55)] relative overflow-hidden">
+            {/* Dashed orbit + safe-door glyph, echoing the dial motif */}
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-dashed border-white/25 pointer-events-none" />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-[1px] pointer-events-none flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full border-[3px] border-white/25 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+              </div>
+            </div>
+            <div className="absolute right-24 top-6 w-1.5 h-1.5 bg-white/50 rounded-full pointer-events-none" />
+            <div className="absolute right-28 top-11 w-1 h-1 bg-white/40 rounded-full pointer-events-none" />
 
             <div className="space-y-1.5 relative z-10">
-              <div className="flex items-center gap-2 text-white/80 text-[11px] tracking-wider uppercase font-normal">
-                <span>Total Balance</span>
-                <button 
-                  onClick={() => setShowBalance(!showBalance)} 
-                  className="text-white/60 hover:text-white transition-colors"
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-white/80">Total Balance</span>
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                   aria-label="Toggle balance visibility"
                 >
                   <EyeIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-light text-white/90">₱</span>
+              <div className="flex items-baseline gap-1 mt-3">
+                <span className="text-lg font-semibold text-white/85">₱</span>
                 {loading ? (
                   <h1 className="text-xl font-light text-white/60">Loading…</h1>
                 ) : (
-                  <h1 className="text-3xl font-medium tracking-tight leading-tight">
+                  <h1 className="text-[2.6rem] font-semibold tracking-tight leading-none">
                     {showBalance ? totalEquivalentInPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '••••••'}
                   </h1>
                 )}
               </div>
-                <span className="text-xs font-normal tracking-wide text-white/80 block">
-                  {showBalance ? `${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
-                </span>
+
+              <span className="text-xs font-medium tracking-wide text-white/80 flex items-center gap-1.5 pt-1">
+                {showBalance ? `≈ ${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
+                <span className="w-1 h-1 rounded-full bg-white/40" />
+                <span className="text-white/60">updated just now</span>
+              </span>
+
+              <div className="inline-flex items-center gap-1.5 mt-4 px-2.5 py-1 rounded-full bg-white/20 border border-white/25 text-[11px] font-semibold">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                Growing steadily
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-glance insight strip */}
+          <div className="mx-4 mt-3 grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl bg-white border border-slate-100 p-3">
+              <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">This month</p>
+              <p className="text-base font-semibold text-[#E3790A] mt-0.5">+₱1,240</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-100 p-3">
+              <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Vaults</p>
+              <p className="text-base font-semibold text-slate-800 mt-0.5">{vaultsCount || 0}</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-100 p-3">
+              <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Streak</p>
+              <p className="text-base font-semibold text-slate-800 mt-0.5">12 days</p>
             </div>
           </div>
 
