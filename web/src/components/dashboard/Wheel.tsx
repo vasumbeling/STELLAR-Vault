@@ -112,35 +112,11 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`relative w-72 h-72 rounded-full border border-dashed border-amber-200/70 bg-transparent flex items-center justify-center transition-colors duration-200 ${
-          isDragging ? 'cursor-grabbing border-[#FF9F1C]/60 bg-amber-50/10' : 'cursor-grab'
+        className={`relative w-72 h-72 rounded-full border border-amber-200/60 bg-transparent flex items-center justify-center transition-colors duration-200 ${
+          isDragging ? 'cursor-grabbing border-[#FF9F1C]/50 bg-amber-50/10' : 'cursor-grab'
         }`}
         style={{ touchAction: 'none' }}
       >
-        {/* Engraved tick marks — turns the dashed boundary into a real dial face */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
-          {Array.from({ length: 60 }).map((_, i) => {
-            const isMajor = i % 5 === 0;
-            const deg = i * 6;
-            const rad = (deg * Math.PI) / 180;
-            const rOuter = 49.5;
-            const rInner = isMajor ? 46.3 : 47.6;
-            const x1 = 50 + rOuter * Math.sin(rad);
-            const y1 = 50 - rOuter * Math.cos(rad);
-            const x2 = 50 + rInner * Math.sin(rad);
-            const y2 = 50 - rInner * Math.cos(rad);
-            return (
-              <line
-                key={i}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={isMajor ? '#F0A93B' : '#F3D9A8'}
-                strokeWidth={isMajor ? 0.7 : 0.4}
-                strokeLinecap="round"
-              />
-            );
-          })}
-        </svg>
-
         {/* Rotatable Node Wheel Structural Frame */}
         <div
           className="absolute inset-0 rounded-full"
@@ -234,14 +210,6 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
           </div>
         </div>
 
-      </div>
-
-      {/* Supporting headline — echoes the dial's craftsmanship framing */}
-      <div className="mt-5 text-center px-6">
-        <p className="text-[15px] font-semibold text-slate-800 leading-snug">
-          Secure. Simple. <span className="text-[#E3790A]">Built for us.</span>
-        </p>
-        <div className="mx-auto mt-2 w-6 h-[3px] rounded-full bg-[#FF9F1C]" />
       </div>
     </section>
   );

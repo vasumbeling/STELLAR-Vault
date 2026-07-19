@@ -563,27 +563,9 @@ return (
                 <span className="w-1 h-1 rounded-full bg-white/40" />
                 <span className="text-white/60">updated just now</span>
               </span>
-
-              <div className="inline-flex items-center gap-1.5 mt-4 px-2.5 py-1 rounded-full bg-white/20 border border-white/25 text-[11px] font-semibold">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-                Growing steadily
-              </div>
             </div>
           </div>
           
-          {/* Spinning Dial Core Wrapper */}
-          <div className="my-17">
-            <Wheel 
-              activeTab={activeTab} 
-              panel={panel} 
-              setActiveTab={(tab) => setActiveTab(tab as Tab)} 
-              setPanel={setPanel} 
-            />
-          </div>
-
           {/* Quick-glance insight strip */}
           <div className="mx-4 mt-3 grid grid-cols-3 gap-2.5">
             <div className="rounded-2xl bg-white border border-slate-100 p-3">
@@ -598,6 +580,16 @@ return (
               <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Streak</p>
               <p className="text-base font-semibold text-slate-800 mt-0.5">12 days</p>
             </div>
+          </div>
+
+          {/* Spinning Dial Core Wrapper */}
+          <div className="my-22">
+            <Wheel 
+              activeTab={activeTab} 
+              panel={panel} 
+              setActiveTab={(tab) => setActiveTab(tab as Tab)} 
+              setPanel={setPanel} 
+            />
           </div>
 
             {/* Slide Inline Configuration Panels */}
