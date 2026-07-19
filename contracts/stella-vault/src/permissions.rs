@@ -63,12 +63,17 @@ impl VaultContract {
         Ok(())
     }
 
-    /// Remove a contributor. Owner-only. Does not touch vault funds — any
-    /// balance already contributed by that member stays escrowed in the vault.
+    /// Remove a contributor. Owner-only, OR a member removing themselves
+    /// (self-service leave). Does not touch vault funds — any balance already
+    /// contributed by that member stays escrowed in the vault.
     pub(crate) fn remove_member_impl(env: Env, caller: Address, vault_id: u64, member: Address) -> Result<(), Error> {
         caller.require_auth();
         Self::load_vault(&env, vault_id)?;
-        require_owner(&env, vault_id, &caller)?;
+
+        let is_self_removal = caller == member;
+        if !is_self_removal {
+            require_owner(&env, vault_id, &caller)?;
+        }
 
         let members = load_members(&env, vault_id);
         let mut updated: Vec<Member> = Vec::new(&env);
