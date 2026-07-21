@@ -2,6 +2,7 @@ import "dotenv/config"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/verifyAuth"
 import { logActivity } from "@/lib/logActivity"
+import { createNotification, notifyVaultMembers } from "@/lib/notificationHelpers"
 
 export async function PATCH(
   request: Request,
@@ -62,6 +63,33 @@ export async function PATCH(
       action: "member_confirmed",
       vaultId: invitation.vaultId,
       detail: `Confirmed ${invitation.inviteePubkey} as a member of "${invitation.vault.name}" on-chain`,
+    })
+
+    const timestamp = new Date().toISOString()
+
+    await createNotification({
+      pubkey: invitation.inviteePubkey,
+      vaultId: invitation.vaultId,
+      message: `You were added as a member of collaborative vault "${invitation.vault.name}".`,
+      variant: "success",
+      meta: {
+        event: "member_added",
+        vaultName: invitation.vault.name,
+        timestamp,
+      },
+    })
+
+    await notifyVaultMembers({
+      vaultId: invitation.vaultId,
+      excludePubkeys: [invitation.inviteePubkey],
+      message: `A new member joined collaborative vault "${invitation.vault.name}".`,
+      variant: "info",
+      meta: {
+        event: "member_joined",
+        newMemberPubkey: invitation.inviteePubkey,
+        vaultName: invitation.vault.name,
+        timestamp,
+      },
     })
 
     return Response.json(updated, { status: 200 })

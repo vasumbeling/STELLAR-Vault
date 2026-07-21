@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { fetchBalances, type Balances } from '@/lib/balances';
 import { walletService, authFetch } from '@/lib/wallet';
 import {
@@ -524,47 +525,55 @@ return (
 
       {activeTab === 'home' && (
         <>
-          <div className="mx-4 mt-5 p-6 rounded-2xl bg-linear-to-br from-[#FF9F1C] to-[#F37A00] text-white shadow-md relative overflow-hidden">
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-28 h-28 bg-white/10 rounded-xl pointer-events-none before:content-[''] before:absolute before:-top-4 before:left-1/2 before:-translate-x-1/2 before:w-16 before:h-16 before:border-[6px] before:border-white/10 before:rounded-t-full" />
-            <div className="absolute right-14 top-1/2 -translate-y-1/2 w-3 h-3 bg-white/20 rounded-full pointer-events-none" />
+          <div className="mx-6 mt-6 p-6 rounded-3xl bg-linear-to-br from-[#FFB238] via-[#FF9F1C] to-[#F37A00] text-white shadow-[0_18px_30px_-14px_rgba(230,80,0,0.40)] relative overflow-hidden">
+            {/* Safe icon artwork, echoing the vault/dial motif */}
+            <Image
+              src="/safeIcon.png"
+              alt=""
+              aria-hidden="true"
+              width={176}
+              height={176}
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-40 object-contain pointer-events-none select-none"
+            />
 
-            <div className="space-y-1.5 relative z-10">
-              <div className="flex items-center gap-2 text-white/80 text-[11px] tracking-wider uppercase font-normal">
-                <span>Total Balance</span>
-                <button 
-                  onClick={() => setShowBalance(!showBalance)} 
-                  className="text-white/60 hover:text-white transition-colors"
+            <div className="space-y-2 relative z-10">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-white/80">Total Balance</span>
+              </div>
+
+              <div className="flex items-baseline gap-1.5 mt-3">
+                <span className="text-lg font-semibold text-white/85">₱</span>
+                {loading ? (
+                  <h1 className="text-xl font-light text-white/60">Loading…</h1>
+                ) : (
+                  <h1 className="text-[2.6rem] font-semibold tracking-tight leading-none">
+                    {showBalance ? totalEquivalentInPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '••••••'}
+                  </h1>
+                )}
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors shrink-0 self-center"
                   aria-label="Toggle balance visibility"
                 >
                   <EyeIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-light text-white/90">₱</span>
-                {loading ? (
-                  <h1 className="text-xl font-light text-white/60">Loading…</h1>
-                ) : (
-                  <h1 className="text-3xl font-medium tracking-tight leading-tight">
-                    {showBalance ? totalEquivalentInPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '••••••'}
-                  </h1>
-                )}
-              </div>
-                <span className="text-xs font-normal tracking-wide text-white/80 block">
-                  {showBalance ? `${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC` : '•••••• USDC'}
-                </span>
+              <span className="text-xs font-medium tracking-wide text-white/80 flex items-center gap-1.5 pt-1">
+                {showBalance ? `≈ ${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC` : '•••••• USDC'}
+              </span>
             </div>
           </div>
 
-            {/* Spinning Dial Core Wrapper */}
-            <div className="my-17">
-              <Wheel 
-                activeTab={activeTab} 
-                panel={panel} 
-                setActiveTab={(tab) => setActiveTab(tab as Tab)} 
-                setPanel={setPanel} 
-              />
-            </div>
+          {/* Spinning Dial Core Wrapper */}
+          <div className="mt-25 mb-5">
+            <Wheel 
+              activeTab={activeTab} 
+              panel={panel} 
+              setActiveTab={(tab) => setActiveTab(tab as Tab)} 
+              setPanel={setPanel} 
+            />
+          </div>
 
             {/* Slide Inline Configuration Panels */}
             {panel && (

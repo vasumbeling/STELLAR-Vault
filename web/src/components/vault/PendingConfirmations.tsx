@@ -4,6 +4,7 @@ import { fetchVaultInvitations, confirmInvitation, type Invitation } from '@/lib
 import { buildAddMemberXDR, readListMembers } from '@/lib/contract';
 import { signWithCurrentAccount } from '@/lib/wallet';
 import { submitSignedXDR, pollTransaction } from '@/lib/payment';
+import { createAppNotification } from '@/lib/notifications';
 
 const SESSION_KEY_MISSING_MESSAGE = 'Your session key is unavailable. Please unlock your account again.';
 
@@ -31,7 +32,12 @@ export default function PendingConfirmations({
     }
   }, [vaultId]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [refresh]);
 
   const confirm = async (invitation: Invitation) => {
     setBusyId(invitation.id);
@@ -42,14 +48,32 @@ export default function PendingConfirmations({
 
       const xdr = await buildAddMemberXDR(ownerPubkey, onChainVaultId, invitation.inviteePubkey, shareBps);
       const signedXdr = await signWithCurrentAccount(xdr);
+      await createAppNotification({
+        message: 'Member addition transaction submitted to the blockchain.',
+        vaultId,
+        variant: 'info',
+        meta: { event: 'transaction_submitted', operation: 'add_member', timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
       const hash = await submitSignedXDR(signedXdr);
       await pollTransaction(hash);
+      await createAppNotification({
+        message: 'Member addition transaction confirmed on-chain.',
+        vaultId,
+        variant: 'success',
+        meta: { event: 'transaction_confirmed', operation: 'add_member', hash, timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
 
       await confirmInvitation(invitation.id);
       await refresh();
       onConfirmed();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to confirm member';
+      await createAppNotification({
+        message: `Member addition failed: ${message}`,
+        vaultId,
+        variant: 'error',
+        meta: { event: 'transaction_failed', operation: 'add_member', error: message, timestamp: new Date().toISOString() },
+      }).catch(() => undefined);
       if (message === SESSION_KEY_MISSING_MESSAGE) {
         setError('Please unlock your account and try again.');
       } else {

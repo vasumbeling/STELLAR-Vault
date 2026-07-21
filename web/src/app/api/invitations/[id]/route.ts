@@ -50,6 +50,21 @@ export async function PATCH(
       vaultId: invitation.vaultId,
       detail: `${auth.pubkey} ${status} the invitation to "${invitation.vault.name}"`,
     })
+
+    if (status === "accepted") {
+      await prisma.notification.create({
+        data: {
+          pubkey: invitation.invitedBy,
+          message: `${auth.pubkey} accepted the invitation to join "${invitation.vault.name}".`,
+          vaultId: invitation.vaultId,
+          variant: "info",
+          meta: {
+            event: "member_acceptance",
+            vaultName: invitation.vault.name,
+          },
+        },
+      })
+    }
     return Response.json(updated, { status: 200 })
   } catch (error) {
     console.error("Invitation response error:", error)

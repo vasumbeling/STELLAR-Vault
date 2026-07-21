@@ -2,6 +2,7 @@ import "dotenv/config"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/verifyAuth"
 import { logActivity } from "@/lib/logActivity"
+import { createNotification, notifyVaultMembers } from "@/lib/notificationHelpers"
 
 const VALID_EVENT_TYPES = [
   "deposit",
@@ -10,6 +11,8 @@ const VALID_EVENT_TYPES = [
   "withdrawal_approved",
   "withdrawal_executed",
   "vault_closed",
+  "distribution_completed",
+  "distribution_failed",
 ] as const
 
 type EventType = (typeof VALID_EVENT_TYPES)[number]
@@ -104,6 +107,10 @@ async function handleEvent(
       return handleWithdrawalExecuted(vault, body, reporterPubkey)
     case "vault_closed":
       return handleVaultClosed(vault, reporterPubkey)
+    case "distribution_completed":
+      return handleDistributionCompleted(vault, body, reporterPubkey)
+    case "distribution_failed":
+      return handleDistributionFailed(vault, body, reporterPubkey)
   }
 }
 
@@ -127,6 +134,58 @@ async function handleDeposit(vault: Vault, body: Record<string, unknown>, report
     vaultId: vault.id,
     detail: `Deposited ${amount} into "${vault.name}" (new balance: ${newBalance})`,
   })
+
+  const progress = Math.min(100, Number(((newBalance / vault.targetAmount) * 100).toFixed(2)))
+  const timestamp = new Date().toISOString()
+  const formattedAmount = Number(amount).toFixed(7)
+  const formattedBalance = Number(newBalance).toFixed(2)
+  const formattedProgress = `${progress.toFixed(0)}%`
+
+  await createNotification({
+    pubkey: reporterPubkey,
+    vaultId: vault.id,
+    message: `You deposited ${formattedAmount} USDC into "${vault.name}". Balance: ${formattedBalance} USDC (${formattedProgress} of goal).`,
+    variant: "success",
+    meta: {
+      event: "deposit",
+      amount: formattedAmount,
+      vaultName: vault.name,
+      currentBalance: newBalance,
+      progress,
+      timestamp,
+    },
+  })
+
+  await notifyVaultMembers({
+    vaultId: vault.id,
+    excludePubkeys: [reporterPubkey],
+    message: `${reporterPubkey} deposited ${formattedAmount} USDC into "${vault.name}". Balance: ${formattedBalance} USDC (${formattedProgress} of goal).`,
+    variant: "info",
+    meta: {
+      event: "deposit",
+      amount: formattedAmount,
+      vaultName: vault.name,
+      currentBalance: newBalance,
+      progress,
+      timestamp,
+    },
+  })
+
+  if (newStatus === "GoalReached") {
+    await notifyVaultMembers({
+      vaultId: vault.id,
+      message: `Collaborative vault "${vault.name}" has reached 100% of its savings goal and is ready for distribution.`,
+      variant: "success",
+      meta: {
+        event: "goal_reached",
+        vaultName: vault.name,
+        currentBalance: newBalance,
+        targetAmount: vault.targetAmount,
+        progress: 100,
+        timestamp,
+      },
+    })
+  }
 
   return {
     data: {
@@ -260,11 +319,37 @@ async function handleVaultClosed(vault: Vault, reporterPubkey: string) {
     data: { status: "Closed" },
   })
 
+  const timestamp = new Date().toISOString()
+
   await logActivity({
     pubkey: reporterPubkey,
     action: "vault_closed",
     vaultId: vault.id,
     detail: `Closed vault "${vault.name}"`,
+  })
+
+  await createNotification({
+    pubkey: reporterPubkey,
+    vaultId: vault.id,
+    message: `Collaborative vault "${vault.name}" has been closed.`,
+    variant: "info",
+    meta: {
+      event: "vault_closed",
+      vaultName: vault.name,
+      timestamp,
+    },
+  })
+
+  await notifyVaultMembers({
+    vaultId: vault.id,
+    excludePubkeys: [reporterPubkey],
+    message: `Collaborative vault "${vault.name}" has been closed.`,
+    variant: "info",
+    meta: {
+      event: "vault_closed",
+      vaultName: vault.name,
+      timestamp,
+    },
   })
 
   return {
@@ -273,4 +358,99 @@ async function handleVaultClosed(vault: Vault, reporterPubkey: string) {
       onChainVaultId: updated.onChainVaultId.toString(),
     }
   }
+}
+
+async function handleDistributionCompleted(vault: Vault, body: Record<string, unknown>, reporterPubkey: string) {
+  const totalAmount = Number(body.totalAmount ?? vault.balance)
+  const memberCount = Number(body.memberCount ?? (await prisma.vaultMember.count({ where: { vaultId: vault.id } })))
+  const shareAmount = Number(body.shareAmount ?? (memberCount > 0 ? totalAmount / memberCount : 0))
+
+  if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+    return { error: "totalAmount must be a positive number", status: 400 }
+  }
+  if (!Number.isFinite(memberCount) || memberCount <= 0) {
+    return { error: "memberCount must be a positive number", status: 400 }
+  }
+  if (!Number.isFinite(shareAmount) || shareAmount <= 0) {
+    return { error: "shareAmount must be a positive number", status: 400 }
+  }
+
+  const timestamp = new Date().toISOString()
+  const formattedTotal = Number(totalAmount).toFixed(2)
+  const formattedShare = Number(shareAmount).toFixed(2)
+
+  await logActivity({
+    pubkey: reporterPubkey,
+    action: "distribution_completed",
+    vaultId: vault.id,
+    detail: `Distributed ${formattedTotal} USDC across ${memberCount} members in "${vault.name}"`,
+  })
+
+  await createNotification({
+    pubkey: reporterPubkey,
+    vaultId: vault.id,
+    message: `Distribution completed successfully. Total distributed: ${formattedTotal} USDC, your share: ${formattedShare} USDC, members: ${memberCount}.`,
+    variant: "success",
+    meta: {
+      event: "distribution_completed",
+      totalAmount: Number(totalAmount).toFixed(2),
+      shareAmount: Number(shareAmount).toFixed(2),
+      memberCount,
+      timestamp,
+    },
+  })
+
+  await notifyVaultMembers({
+    vaultId: vault.id,
+    excludePubkeys: [reporterPubkey],
+    message: `Distribution completed successfully. Total distributed: ${formattedTotal} USDC, your share: ${formattedShare} USDC, members: ${memberCount}.`,
+    variant: "success",
+    meta: {
+      event: "distribution_completed",
+      totalAmount: Number(totalAmount).toFixed(2),
+      shareAmount: Number(shareAmount).toFixed(2),
+      memberCount,
+      timestamp,
+    },
+  })
+
+  return { data: { status: "distributed", totalAmount, shareAmount, memberCount, timestamp } }
+}
+
+async function handleDistributionFailed(vault: Vault, body: Record<string, unknown>, reporterPubkey: string) {
+  const errorMessage = String(body.error ?? body.message ?? "Distribution failed due to an unexpected error.")
+  const timestamp = new Date().toISOString()
+
+  await logActivity({
+    pubkey: reporterPubkey,
+    action: "distribution_failed",
+    vaultId: vault.id,
+    detail: `Distribution failed for "${vault.name}": ${errorMessage}`,
+  })
+
+  await createNotification({
+    pubkey: reporterPubkey,
+    vaultId: vault.id,
+    message: `Distribution failed: ${errorMessage}`,
+    variant: "error",
+    meta: {
+      event: "distribution_failed",
+      error: errorMessage,
+      timestamp,
+    },
+  })
+
+  await notifyVaultMembers({
+    vaultId: vault.id,
+    excludePubkeys: [reporterPubkey],
+    message: `Distribution failed: ${errorMessage}`,
+    variant: "error",
+    meta: {
+      event: "distribution_failed",
+      error: errorMessage,
+      timestamp,
+    },
+  })
+
+  return { data: { status: "distribution_failed", error: errorMessage, timestamp } }
 }

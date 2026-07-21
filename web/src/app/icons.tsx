@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import type { Tab } from '@/lib/dashboardTypes';
+import { Tab } from '@/lib/dashboardTypes';
 
 export function CheckBadgeIcon({ className = '' }) {
   return (

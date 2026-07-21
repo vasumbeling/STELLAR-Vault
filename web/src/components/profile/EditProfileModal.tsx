@@ -175,7 +175,7 @@ export default function EditProfileModal({ open, onClose, publicKey, currentUser
           <button
             onClick={handleSave}
             disabled={!isValid || !dirty || saving}
-            className="flex-1 py-2.5 rounded-xl bg-[#FF5E00] text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 py-2.5 rounded-xl bg-linear-to-br from-[#FFB238] via-[#FF9F1C] to-[#F37A00] text-white text-[11px] font-semibold uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
           >
             {saving && <Spinner className="animate-spin h-3 w-3 text-white" />}
             {saving ? 'Saving…' : 'Save Changes'}

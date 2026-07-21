@@ -5,6 +5,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   type AppNotification,
+  type AppNotificationVariant,
 } from '@/lib/notifications';
 
 function BellIcon({ className = '' }) {
@@ -24,6 +25,26 @@ function timeAgo(iso: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function variantLabel(variant: AppNotificationVariant): string {
+  switch (variant) {
+    case 'success': return 'Success';
+    case 'warning': return 'Warning';
+    case 'error': return 'Error';
+    case 'action_required': return 'Action required';
+    default: return 'Info';
+  }
+}
+
+function variantClasses(variant: AppNotificationVariant): string {
+  switch (variant) {
+    case 'success': return 'bg-emerald-50 text-emerald-600';
+    case 'warning': return 'bg-amber-50 text-amber-600';
+    case 'error': return 'bg-rose-50 text-rose-600';
+    case 'action_required': return 'bg-rose-50 text-rose-600';
+    default: return 'bg-slate-100 text-slate-600';
+  }
 }
 
 export default function NotificationBell({
@@ -50,7 +71,12 @@ export default function NotificationBell({
     }
   }, [publicKey]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [refresh]);
 
   useEffect(() => {
     if (!publicKey) return;
@@ -149,7 +175,12 @@ export default function NotificationBell({
                 >
                   {!n.read && <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#FF5E00] shrink-0" />}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[11px] leading-snug ${n.read ? 'text-slate-500' : 'text-slate-700 font-medium'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${variantClasses(n.variant)}`}>
+                        {variantLabel(n.variant)}
+                      </span>
+                    </div>
+                    <p className={`text-[11px] leading-snug mt-1 ${n.read ? 'text-slate-500' : 'text-slate-700 font-medium'}`}>
                       {n.message}
                     </p>
                     <p className="text-[9px] text-slate-400 mt-0.5">{timeAgo(n.createdAt)}</p>
