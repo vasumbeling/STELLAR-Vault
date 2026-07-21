@@ -17,6 +17,9 @@ model User {
 
   points Int @default(0)
 
+  level2GateUnlockedAt   DateTime?
+  level2GateUnlockMethod String?  // "points" | "payment"
+
   verificationLevel Int     @default(1)
   phone             String? @unique
   phoneVerified     Boolean @default(false)

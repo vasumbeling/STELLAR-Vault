@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Lock, Sparkles, Wallet, ChevronLeft } from "lucide-react";
+import { Horizon, TransactionBuilder, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
+import { HORIZON_URL, NETWORK_PASSPHRASE } from "@/lib/stellar";
+import { walletService, authFetch, signWithCurrentAccount } from "@/lib/wallet";
 import { PrimaryButton, inputClass } from "./Shared";
 import { getLevel2GateStatus, LEVEL_2_POINTS_REQUIRED, LEVEL_2_UNLOCK_FEE_XLM } from "@/lib/VerificationGate";
 
@@ -9,18 +12,64 @@ interface LevelUpGateProps {
   onClose: () => void;
 }
 
+const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS!;
+const horizonServer = new Horizon.Server(HORIZON_URL);
+
 export default function LevelUpGate({ currentPoints, onUnlocked, onClose }: LevelUpGateProps) {
   const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const status = getLevel2GateStatus(currentPoints);
   const progressPct = Math.min(100, Math.round((currentPoints / LEVEL_2_POINTS_REQUIRED) * 100));
 
   const handlePay = async () => {
+    setError(null);
     setPaying(true);
     try {
-      // Wire this to your existing lib/payment.ts + lib/stellar.ts signing flow.
-      // await submitPayment({ amountXLM: LEVEL_2_UNLOCK_FEE_XLM, purpose: "level2_unlock" });
-      await new Promise((r) => setTimeout(r, 1500)); // placeholder for real payment call
+      const snapshot = walletService.getSnapshot();
+      const publicKey = snapshot.publicKey;
+      if (!publicKey || !snapshot.isConnected) {
+        throw new Error("Wallet not connected. Please log in and try again.");
+      }
+
+      // 1. Build the classic payment transaction
+      const account = await horizonServer.loadAccount(publicKey);
+      const tx = new TransactionBuilder(account, {
+        fee: BASE_FEE,
+        networkPassphrase: NETWORK_PASSPHRASE,
+      })
+        .addOperation(
+          Operation.payment({
+            destination: TREASURY_ADDRESS,
+            asset: Asset.native(),
+            amount: LEVEL_2_UNLOCK_FEE_XLM.toString(),
+          })
+        )
+        .setTimeout(60)
+        .build();
+
+      // 2. Sign with whichever signer is active (Freighter or PIN account)
+      const signedXdr = await signWithCurrentAccount(tx.toXDR());
+      const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+
+      // 3. Submit to Horizon
+      const submitResult = await horizonServer.submitTransaction(signedTx);
+      const txHash = submitResult.hash;
+
+      // 4. Verify with backend — authFetch attaches the JWT automatically
+      const res = await authFetch("/api/verification/unlock-level2", {
+        method: "POST",
+        body: JSON.stringify({ txHash }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Verification failed after payment");
+      }
+
       onUnlocked("payment");
+    } catch (err: any) {
+      console.error("Level 2 unlock payment error:", err);
+      setError(err.message ?? "Payment failed. Please try again.");
     } finally {
       setPaying(false);
     }
@@ -87,6 +136,8 @@ export default function LevelUpGate({ currentPoints, onUnlocked, onClose }: Leve
       <PrimaryButton onClick={handlePay} disabled={paying}>
         {paying ? "Confirming payment…" : `Pay ${LEVEL_2_UNLOCK_FEE_XLM} XLM to unlock`}
       </PrimaryButton>
+
+      {error && <p className="text-xs text-red-500 text-center mt-3">{error}</p>}
 
       <p className="text-xs text-neutral-400 text-center mt-4">
         Or keep saving and completing vault cycles to earn points instead.
