@@ -111,12 +111,17 @@ export async function POST(
       )
     }
 
+    const nonOwnerMembers = await prisma.vaultMember.count({
+      where: { vaultId, role: { not: "Owner" } },
+    })
+
     const proposal = await prisma.vaultProposal.create({
       data: {
         vaultId,
         proposedBy: auth.pubkey,
         type,
         changes: type === "delete" ? Prisma.JsonNull : (changes as Prisma.InputJsonValue),
+        status: nonOwnerMembers === 0 ? "approved" : "pending",
       },
     })
 
