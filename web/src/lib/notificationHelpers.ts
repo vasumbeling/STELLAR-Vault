@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export type NotificationVariant =
   | 'success'
@@ -20,7 +21,7 @@ export async function createNotification(params: {
       message: params.message,
       vaultId: params.vaultId ?? null,
       variant: params.variant ?? 'info',
-      meta: params.meta ?? null,
+      meta: params.meta ? (params.meta as Prisma.InputJsonValue) : Prisma.JsonNull,
     },
   })
 }
@@ -48,7 +49,7 @@ export async function notifyVaultMembers(params: {
     message: params.message,
     vaultId: params.vaultId,
     variant: params.variant ?? 'info',
-    meta: params.meta ?? null,
+    meta: params.meta ? (params.meta as Prisma.InputJsonValue) : Prisma.JsonNull,
   }))
 
   await prisma.notification.createMany({
