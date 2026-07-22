@@ -68,7 +68,7 @@ export default function SendPanel({
 
           {sendMode === 'amount' ? (
             <>
-              {!pendingApproval && (
+              {(!pendingApproval || pendingApproval.recipient === publicKey) && (
                 <div className="space-y-3 animate-fadeIn">
                   <div className="space-y-1">
                     <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-light">Address</label>
@@ -107,7 +107,7 @@ export default function SendPanel({
                 </div>
               )}
 
-              {pendingApproval && (
+              {pendingApproval && pendingApproval.sender === publicKey && (
                 <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 space-y-3 text-[11px] animate-fadeIn">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                     <span className="text-[10px] uppercase text-slate-400 font-light tracking-wider">Pending Tx</span>
