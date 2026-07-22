@@ -289,7 +289,7 @@ export async function transferUSDC(
   amount: string | number,
   options: Omit<TransferOptions, 'recipient'> = {},
 ): Promise<TransferResult> {
-  return runTransfer('transfer', amount, undefined, { ...options, recipient });
+  return runTransfer('transfer', amount, undefined, undefined, { ...options, recipient });
 }
 
 export function getTransferState(): TransferState {
