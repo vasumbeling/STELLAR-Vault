@@ -519,6 +519,10 @@ return (
                 }, 4000);
               };
             }}
+            onNavigateToTransfer={() => {
+              setActiveTab('home');
+              setPanel('receive');
+            }}
           />
         </div>
       )}
@@ -613,6 +617,10 @@ return (
                     onCopyAddress={handleCopyAddress}
                     receiveRequestAmount={receiveRequestAmount}
                     onReceiveRequestAmountChange={setReceiveRequestAmount}
+                    pendingApproval={pendingApproval
+                    onApproveAsReceiver={handleApproveAsReceiver}
+                    onVoidPendingApproval={handleVoidPendingApproval}
+                    }
                   />
                 )}
 
