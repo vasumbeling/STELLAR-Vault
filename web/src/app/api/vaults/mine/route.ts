@@ -47,11 +47,11 @@ export async function GET(request: Request) {
 
     const [ownedVaults, memberships] = await Promise.all([
       prisma.vault.findMany({
-        where: { ownerPubkey: pubkey },
+        where: { ownerPubkey: pubkey, status: {not: "Closed"} },
         orderBy: { createdAt: "desc" },
       }),
       prisma.vaultMember.findMany({
-        where: { pubkey, role: { not: "Owner" } },
+        where: { pubkey, role: { not: "Owner" }, vault: { status: {not: "Closed" } } },
         include: { vault: true },
         orderBy: { vault: { createdAt: "desc" } },
       }),
