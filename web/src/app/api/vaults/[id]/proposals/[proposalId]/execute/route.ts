@@ -54,9 +54,13 @@ export async function POST(
       // update_goal / update_lock XDR and it must have confirmed on-chain
       // before this call. This route only syncs the DB to match.
       const changes = (proposal.changes ?? {}) as Record<string, unknown>
+      const data: Record<string, unknown> = { ...changes }
+      if (typeof data.lockUntil === "string") {
+        data.lockUntil = new Date(data.lockUntil)
+      }
       await prisma.vault.update({
         where: { id: vaultId },
-        data: changes,
+        data,
       })
     }
 

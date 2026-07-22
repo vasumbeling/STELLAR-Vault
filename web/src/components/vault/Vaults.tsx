@@ -111,6 +111,11 @@ function VaultCard({
 
   const [proposalBusy, setProposalBusy] = useState<string | null>(null);
   const [proposalActionError, setProposalActionError] = useState('');
+  const [proposalNeedsPin, setProposalNeedsPin] = useState(false);
+  const [proposalPinInput, setProposalPinInput] = useState('');
+  const [proposalPinError, setProposalPinError] = useState('');
+  const [proposalUnlocking, setProposalUnlocking] = useState(false);
+  const [pendingProposalExecution, setPendingProposalExecution] = useState<VaultProposalRow | null>(null);
 
   useEffect(() => {
     if (!highlighted) return;
@@ -178,6 +183,19 @@ function VaultCard({
       }).catch(() => undefined);
       const hash = await submitSignedXDR(signedXdr);
       await pollTransaction(hash);
+
+      const eventRes = await authFetch(`/api/vaults/${vault.id}/events`,{
+        method: 'POST',
+        body: JSON.stringify({
+          eventType: 'distribution_completed',
+          totalAmount: vault.balance,
+        }),
+      });
+      const eventData = await eventRes.json().catch(() => null);
+      if (!eventRes.ok) {
+        throw new Error(eventData?.error ?? 'Vault balance sync failed after distribution');
+      }
+      
       await createAppNotification({
         message: 'Distribution transaction confirmed on-chain.',
         vaultId: vault.id,
@@ -369,9 +387,35 @@ function VaultCard({
       await loadManageData();
       onChanged();
     } catch (e: unknown) {
-      setProposalActionError(e instanceof Error ? e.message : 'Failed to execute proposal');
+      const message = e instanceof Error ? e.message : 'Failed to execute proposal';
+      if (message === SESSION_KEY_MISSING_MESSAGE) {
+        setPendingProposalExecution(proposal);
+        setProposalNeedsPin(true);
+        setProposalBusy(null);
+        return;
+      }
+      setProposalActionError(message);
     } finally {
       setProposalBusy(null);
+    }
+  };
+
+  const handleProposalUnlockAndRetry = async () => {
+    setProposalUnlocking(true);
+    setProposalPinError('');
+    try {
+      await walletService.unlockPinAccount(proposalPinInput);
+      setProposalNeedsPin(false);
+      setProposalPinInput('');
+      if (pendingProposalExecution) {
+        const proposal = pendingProposalExecution;
+        setPendingProposalExecution(null);
+        await handleExecuteProposal(proposal);
+      }
+    } catch (e: unknown) {
+      setProposalPinError(e instanceof Error ? e.message : 'Incorrect PIN');
+    } finally {
+      setProposalUnlocking(false);
     }
   };
 
@@ -607,6 +651,40 @@ function VaultCard({
 
                     {proposalActionError && <p className="text-[10px] text-rose-500">{proposalActionError}</p>}
 
+                    {proposalNeedsPin && (
+                      <div className="rounded-lg border border-slate-100 bg-white p-3 space-y-2">
+                        <p className="text-[9px] uppercase tracking-wider text-slate-400 font-light">
+                          Enter PIN to continue
+                        </p>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          value={proposalPinInput}
+                          onChange={(e) => setProposalPinInput(e.target.value)}
+                         placeholder="••••"
+                          disabled={proposalUnlocking}
+                          className="w-full rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-xs outline-none focus:border-[#A0F0F0] disabled:opacity-50"
+                        />
+                       {proposalPinError && <p className="text-[9px] text-rose-500">{proposalPinError}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleProposalUnlockAndRetry}
+                            disabled={proposalUnlocking || !proposalPinInput}
+                            className="flex-1 py-2 rounded-lg bg-linear-to-r from-[#FF9F1C] to-[#F37A00] text-white text-[10px] uppercase tracking-wider font-normal disabled:opacity-40"
+                          >
+                            {proposalUnlocking ? 'Unlocking…' : 'Unlock & continue'}
+                          </button>
+                          <button
+                            onClick={() => { setProposalNeedsPin(false); setProposalPinInput(''); setProposalPinError(''); setPendingProposalExecution(null); }}
+                            disabled={proposalUnlocking}
+                            className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] uppercase tracking-wide text-slate-400"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {pendingProposal.status === 'pending' && !isOwned && (
                       <div className="flex gap-2 pt-1">
                         <button
@@ -629,7 +707,7 @@ function VaultCard({
                     {pendingProposal.status === 'approved' && isOwned && (
                       <button
                         onClick={() => handleExecuteProposal(pendingProposal)}
-                        disabled={proposalBusy === pendingProposal.id}
+                        disabled={proposalBusy === pendingProposal.id || proposalNeedsPin}
                         className="w-full py-2 rounded-lg bg-[#FF9F1C] text-white text-[10px] uppercase tracking-wider font-semibold disabled:opacity-50"
                       >
                         {proposalBusy === pendingProposal.id ? 'Executing…' : 'Execute Approved Change'}
