@@ -258,7 +258,7 @@ async function runTransfer(
         : operation === 'withdraw'
           ? `Withdrawal failed: ${message}`
           : `Transfer failed: ${message}`,
-      vaultId: vaultId !== undefined ? String(vaultId) : null,
+      vaultId: dbVaultId ?? null,
       variant: 'error',
       meta: { event: 'transaction_failed', operation, error: message, timestamp: new Date().toISOString() },
     }).catch(() => undefined);
