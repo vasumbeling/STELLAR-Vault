@@ -20,7 +20,9 @@ export async function GET(request: Request) {
 
   const [user, vaultsCount] = await Promise.all([
     prisma.user.findUnique({ where: { pubkey: auth.pubkey }, select: { points: true } }),
-    prisma.vaultMember.count({ where: { pubkey: auth.pubkey } }),
+    prisma.vaultMember.count({
+      where: { pubkey: auth.pubkey, vault: { status: { not: "Closed" }} },
+    }),
   ])
 
   return Response.json({ profile, trust, points: user?.points ?? 0, vaultsCount })

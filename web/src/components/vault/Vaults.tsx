@@ -714,6 +714,9 @@ function VaultCard({
                 {isOwned && vault.vaultType === 'Personal' && (
                   <div className="space-y-1.5">
                     {deleteError && <p className="text-[10px] text-rose-500">{deleteError}</p>}
+                    {vault.status === 'Closed' ? (
+                      <p className="text-[10px] text-slate-400 text-center py-2">This vault has been closed.</p>
+                    ) : (
                     <button
                       onClick={handleDeletePersonalVault}
                       disabled={deletingVault || vault.balance !== 0}
@@ -722,6 +725,7 @@ function VaultCard({
                     >
                       {deletingVault ? 'Deleting…' : 'Delete Vault'}
                     </button>
+                    )}
                   </div>
                 )}
 
