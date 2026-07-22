@@ -201,6 +201,7 @@ async function runTransfer(
         body: JSON.stringify({
           eventType: operation === 'deposit' ? 'deposit' : 'withdraw',
           amount: normalizedAmount,
+          ...(operation === 'withdraw' ? { recipient: sender } : {}),
         }),
       });
       const eventData = await eventRes.json().catch(() => null);
