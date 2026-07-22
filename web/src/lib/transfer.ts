@@ -159,7 +159,7 @@ async function submitAndConfirm(signedXdr: string, operation: TransferOperation,
 async function runTransfer(
   operation: TransferOperation,
   amount: string | number,
-  vaultId: string | number | undefined,
+  onChainVaultId: string | number | undefined,
   dbVaultId: string | undefined,
   options: TransferOptions = {},
 ): Promise<TransferResult> {
@@ -178,10 +178,10 @@ async function runTransfer(
 
     if (operation === 'deposit') {
       setState({ status: 'building', message: 'Building deposit transaction…' });
-      xdr = await buildContributeXDR(sender, normalizedAmount, vaultId);
+      xdr = await buildContributeXDR(sender, normalizedAmount, onChainVaultId);
     } else if (operation === 'withdraw') {
       setState({ status: 'building', message: 'Building withdrawal transaction…' });
-      xdr = await buildWithdrawXDR(sender, normalizedAmount, vaultId);
+      xdr = await buildWithdrawXDR(sender, normalizedAmount, onChainVaultId);
     } else {
       if (!options.recipient || !StrKey.isValidEd25519PublicKey(options.recipient)) {
         throw new Error('Please provide a valid Stellar recipient address.');
@@ -193,10 +193,10 @@ async function runTransfer(
 
     setState({ status: 'waiting_for_signature', message: 'Waiting for wallet approval…' });
     const signedXdr = await signXdr(xdr);
-    const hash = await submitAndConfirm(signedXdr, operation, vaultId);
+    const hash = await submitAndConfirm(signedXdr, operation, onChainVaultId);
 
     if (operation === 'deposit' || operation === 'withdraw') {
-      const eventRes = await authFetch(`/api/vaults/${String(vaultId)}/events`, {
+      const eventRes = await authFetch(`/api/vaults/${String(dbVaultId)}/events`, {
         method: 'POST',
         body: JSON.stringify({
           eventType: operation === 'deposit' ? 'deposit' : 'withdraw',
@@ -216,7 +216,7 @@ async function runTransfer(
       amount: normalizedAmount,
       sender,
       recipient: operation === 'transfer' ? options.recipient ?? '' : 'vault',
-      vaultId: operation === 'transfer' ? undefined : vaultId !== undefined ? String(vaultId) : undefined,
+      vaultId: operation === 'transfer' ? undefined : dbVaultId,
       confirmedAt: new Date().toISOString(),
       message: operation === 'deposit'
         ? 'Deposit completed successfully.'
