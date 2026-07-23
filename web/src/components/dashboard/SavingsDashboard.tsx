@@ -26,6 +26,7 @@ import {
 import { loadHistory, type HistoryEntry } from '@/lib/history';
 import Wheel from '@/components/dashboard/Wheel';
 import History from '@/components/dashboard/History';
+import MoneyTracker from '@/components/tracker/MoneyTracker';
 import Profile from '@/components/profile/Profile';
 import Vaults from '@/components/vault/Vaults';
 import CreateVault from '@/components/vault/CreateVault';
@@ -74,6 +75,9 @@ import DepositReceivePanel from '@/components/dashboard/DepositReceivePanel';
 import WithdrawPanel from './WithdrawPanel';
 import SendPanel from './SendPanel';
 import type { Panel, Tab } from '@/lib/dashboardTypes';
+
+/** Local widening so we can add a "tracker" tab without touching the shared dashboardTypes union. */
+type AppTab = Tab | 'tracker';
 
 const STELLAR_ADDRESS_RE = /^G[A-Z2-7]{55}$/;
 
@@ -139,8 +143,9 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const [loading, setLoading] = useState<boolean>(configured);
   const [vaultSummaryLoading, setVaultSummaryLoading] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
+  const [homeZone, setHomeZone] = useState<'vault' | 'wallet'>('vault');
   const [panel, setPanel] = useState<Panel>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>('home');
   const [busy, setBusy] = useState(false);
   const [transferState, setTransferState] = useState(getTransferState());
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -524,6 +529,27 @@ return (
       )}
 
       {activeTab === 'home' && (
+        <div className="mx-6 mt-5 flex bg-slate-100 rounded-full p-1">
+          <button
+            onClick={() => { setHomeZone('vault'); setPanel(null); }}
+            className={`flex-1 py-2 rounded-full text-xs font-semibold tracking-wide transition-colors ${
+              homeZone === 'vault' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-slate-400'
+            }`}
+          >
+            Vault
+          </button>
+          <button
+            onClick={() => { setHomeZone('wallet'); setPanel(null); }}
+            className={`flex-1 py-2 rounded-full text-xs font-semibold tracking-wide transition-colors ${
+              homeZone === 'wallet' ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-slate-400'
+            }`}
+          >
+            Wallet
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'home' && homeZone === 'vault' && (
         <>
           <div className="mx-6 mt-6 p-6 rounded-3xl bg-linear-to-br from-[#FFB238] via-[#FF9F1C] to-[#F37A00] text-white shadow-[0_18px_30px_-14px_rgba(230,80,0,0.40)] relative overflow-hidden">
             {/* Safe icon artwork, echoing the vault/dial motif */}
@@ -574,7 +600,90 @@ return (
               setPanel={setPanel} 
             />
           </div>
+        </>
+      )}
 
+      {activeTab === 'home' && homeZone === 'wallet' && (
+        <div className="mx-6 mt-6 space-y-4">
+          {/* Spendable balance — flat card, deliberately calmer than the Vault hero */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm">
+            <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-slate-400">Spendable Balance</span>
+            <div className="flex items-baseline gap-1.5 mt-3">
+              <span className="text-base font-semibold text-slate-400">₱</span>
+              {loading ? (
+                <h1 className="text-xl font-light text-slate-300">Loading…</h1>
+              ) : (
+                <h1 className="text-[2.2rem] font-semibold tracking-tight leading-none text-[#1A1A1A]">
+                  {showBalance ? totalEquivalentInPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '••••••'}
+                </h1>
+              )}
+              <button
+                onClick={() => setShowBalance(!showBalance)}
+                className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors shrink-0 self-center"
+                aria-label="Toggle balance visibility"
+              >
+                <EyeIcon className="w-3.5 h-3.5 text-slate-500" />
+              </button>
+            </div>
+            <span className="text-xs font-medium tracking-wide text-slate-400 flex items-center gap-1.5 pt-1">
+              {showBalance ? `≈ ${walletUsdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC` : '•••••• USDC'}
+            </span>
+          </div>
+
+          {/* Quick actions — everyday spending, not the full vault wheel */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setPanel('send')}
+              className={`py-3.5 rounded-2xl border text-sm font-semibold transition-colors ${
+                panel === 'send' ? 'bg-cyan-50 border-cyan-300 text-cyan-600' : 'bg-white border-slate-100 text-[#1A1A1A] hover:border-slate-200'
+              }`}
+            >
+              Send
+            </button>
+            <button
+              onClick={() => setPanel('receive')}
+              className={`py-3.5 rounded-2xl border text-sm font-semibold transition-colors ${
+                panel === 'receive' ? 'bg-cyan-50 border-cyan-300 text-cyan-600' : 'bg-white border-slate-100 text-[#1A1A1A] hover:border-slate-200'
+              }`}
+            >
+              Receive
+            </button>
+          </div>
+
+          {/* Mini recent activity */}
+          <div>
+            <div className="flex items-center justify-between px-1 mb-2">
+              <h3 className="text-sm font-semibold text-slate-700">Recent activity</h3>
+              <button
+                onClick={() => setActiveTab('activity')}
+                className="text-[11px] font-semibold text-[#FF9F1C]"
+              >
+                See all
+              </button>
+            </div>
+            <div className="space-y-2">
+              {history.length === 0 ? (
+                <p className="p-4 rounded-2xl bg-white border border-slate-100 text-xs text-slate-400 text-center">
+                  No recent activity yet.
+                </p>
+              ) : (
+                history.slice(0, 3).map((entry) => (
+                  <div key={entry.id} className="p-3.5 rounded-2xl bg-white border border-slate-100 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{entry.title}</p>
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5">{entry.description}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-800 shrink-0">{entry.amount.toFixed(2)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'home' && (
+        <>
             {/* Slide Inline Configuration Panels */}
             {panel && (
               <div className="mx-4 mt-2 space-y-3">
@@ -705,6 +814,17 @@ return (
           </div>
         )}
         
+        {/* === MONEY TRACKER PANEL === */}
+        {activeTab === 'tracker' && (
+          <div className="pt-8">
+            <MoneyTracker
+              history={history}
+              loading={loading}
+              onRefresh={refresh}
+            />
+          </div>
+        )}
+
         {/* === VAULT VIEW PANEL === */}
         {activeTab === 'vaults' && (
           <div className="pt-8">
@@ -722,7 +842,7 @@ return (
 
       {/* Fixed Floating Dock Menu */}
       <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-4 pt-3 pb-7 flex justify-between items-center z-40">
-        {(['home', 'vaults', 'activity', 'profile'] as Tab[]).map((tab) => {
+        {(['home', 'vaults', 'tracker', 'activity', 'profile'] as AppTab[]).map((tab) => {
           const isSelected = activeTab === tab;
 
           return (
@@ -739,7 +859,21 @@ return (
                   isSelected ? 'bg-slate-100' : 'hover:bg-slate-50'
                 }`}
               >
-                <NavIcon type={tab} active={isSelected} />
+                {tab === 'tracker' ? (
+                  <svg
+                    className={`w-5 h-5 ${isSelected ? 'text-[#FF9F1C]' : 'text-slate-400'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    aria-label="Money tracker"
+                  >
+                    <path d="M3 3v18h18" />
+                    <path d="M7 15l4-6 3 3 5-8" />
+                  </svg>
+                ) : (
+                  <NavIcon type={tab as Tab} active={isSelected} />
+                )}
               </span>
             </button>
           );
