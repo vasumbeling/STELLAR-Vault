@@ -312,6 +312,16 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
       .catch(() => { });
   }, []);
 
+  useEffect(() => {
+  if (!publicKey) return;
+  const interval = setInterval(() => {
+    fetchBalances(publicKey)
+      .then((b) => setWalletBalances(b))
+      .catch(() => {});
+  }, 20000); // every 20s
+  return () => clearInterval(interval);
+}, [publicKey]);
+
   /* ---------- Handlers ---------- */
 
   const handleCopyAddress = async () => {
