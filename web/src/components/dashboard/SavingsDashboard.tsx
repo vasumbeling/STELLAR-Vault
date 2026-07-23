@@ -34,6 +34,7 @@ import NotificationBell from '@/components/shared/NotificationBell';
 import { useToast } from '@/components/shared/Toast';
 import { loadProfile, loadTrustScore, type UserProfile, type TrustScore } from '@/lib/auth/verification';
 import { EyeIcon, SparkleStar, NavIcon } from '@/app/icons';
+import { BudgetProvider } from '@/lib/budgets';
 
 /** currentColor-based glyphs so the active tab's orange color can be set by the wrapper. */
 function NavGlyph({ type }: { type: Tab }) {
@@ -502,6 +503,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const purchasingPowerSaved = walletUsdcBalance * (phpRate * 0.06);
 
 return (
+  <BudgetProvider history={history}>
   <div className="max-w-md mx-auto min-h-210 bg-[#fffdfb] rounded-[2.5rem] overflow-hidden shadow-xl relative flex flex-col justify-between font-sans tracking-tight border border-slate-200/40 text-[#1A1A1A]">
     
     <div className="flex-1 pb-36 overflow-y-auto">
@@ -881,5 +883,6 @@ return (
       </div>
 
     </div>
+  </BudgetProvider>
   );
 }

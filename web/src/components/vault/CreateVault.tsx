@@ -6,6 +6,7 @@ import { submitSignedXDR, pollTransactionForResult } from '@/lib/payment';
 import { CONTRACT_ID } from '@/lib/stellar';
 import { authFetch, signWithCurrentAccount, walletService } from '@/lib/wallet';
 import { createAppNotification } from '@/lib/notifications';
+import { useBudgets } from '@/lib/budgets';
 
 type Status = 'idle' | 'building' | 'signing' | 'submitting' | 'confirming' | 'saving' | 'success' | 'error';
 
@@ -41,6 +42,11 @@ export default function CreateVault({
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [unlocking, setUnlocking] = useState(false);
+
+  const { addBudget } = useBudgets();
+  const [budgetOffered, setBudgetOffered] = useState(false);
+  const [budgetLinked, setBudgetLinked] = useState(false);
+  const [createdVaultId, setCreatedVaultId] = useState<string | null>(null);
 
   const busy = !['idle', 'success', 'error'].includes(status);
 
@@ -97,6 +103,7 @@ export default function CreateVault({
       }
 
       setStatus('success');
+      setCreatedVaultId(data.id);
       onCreated(data.id);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Vault creation failed';
@@ -238,8 +245,43 @@ export default function CreateVault({
       )}
 
       {status === 'success' && (
-        <div className="p-3 text-[11px] text-emerald-600 font-light">
+        <div className="p-3 text-[11px] text-emerald-600 font-light space-y-2.5">
           <p>Vault created successfully.</p>
+
+          {!budgetOffered && !budgetLinked && (
+            <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-2">
+              <p className="text-slate-500 font-normal">
+                Track this against a monthly Savings budget of {Number(targetAmount).toFixed(0)} USDC?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    addBudget({
+                      category: 'Savings',
+                      limit: Number(targetAmount),
+                      linkedVaultId: createdVaultId ?? undefined,
+                      linkedVaultName: name.trim() || 'this vault',
+                    });
+                    setBudgetLinked(true);
+                    setBudgetOffered(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] uppercase tracking-wide font-normal"
+                >
+                  Set Budget
+                </button>
+                <button
+                  onClick={() => setBudgetOffered(true)}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-[10px] uppercase tracking-wide text-slate-400"
+                >
+                  Skip
+                </button>
+              </div>
+            </div>
+          )}
+
+          {budgetLinked && (
+            <p className="text-emerald-600/80 font-normal">Savings envelope created — track it from Money Tracker.</p>
+          )}
         </div>
       )}
 

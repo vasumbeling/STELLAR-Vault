@@ -3,79 +3,24 @@
 import React, { useMemo, useState } from 'react';
 import { type HistoryEntry } from '@/lib/history';
 import { RefreshIcon } from '@/app/icons';
+import { useBudgets } from '@/lib/budgets';
+import Budgets from '@/components/budgets/Budgets';
+import {
+  CATEGORIES,
+  CATEGORY_STYLE,
+  type Category,
+  guessCategory,
+  isVaultEntry,
+  signedVaultAmount,
+  monthKey,
+  monthLabel,
+  lastMonthKeys,
+} from '@/lib/spendCategories';
 
 interface MoneyTrackerProps {
   history: HistoryEntry[];
   loading: boolean;
   onRefresh: () => void;
-}
-
-/**
- * Client-side-only categorization for now — no backend field for this yet.
- * Assignments persist for the lifetime of the tab (component state), and
- * a sensible default is guessed from the entry's kind/title so the list
- * isn't just "Uncategorized" on first load.
- */
-const CATEGORIES = [
-  'Food & Drink',
-  'Transport',
-  'Bills',
-  'Shopping',
-  'Transfers',
-  'Savings',
-  'Income',
-  'Other',
-] as const;
-
-type Category = typeof CATEGORIES[number];
-
-const CATEGORY_STYLE: Record<Category, { bg: string; fg: string; bar: string }> = {
-  'Food & Drink': { bg: 'bg-[#FFF1E6]', fg: 'text-[#D8641E]', bar: '#FF9F1C' },
-  'Transport': { bg: 'bg-[#E6F1FF]', fg: 'text-[#2563EB]', bar: '#2563EB' },
-  'Bills': { bg: 'bg-[#FCE8E8]', fg: 'text-[#DC2626]', bar: '#DC2626' },
-  'Shopping': { bg: 'bg-[#F3E8FD]', fg: 'text-[#9333EA]', bar: '#9333EA' },
-  'Transfers': { bg: 'bg-[#E3FCFC]', fg: 'text-[#00A3A3]', bar: '#00A3A3' },
-  'Savings': { bg: 'bg-[#E6FBF3]', fg: 'text-[#10B981]', bar: '#10B981' },
-  'Income': { bg: 'bg-[#EAF6DA]', fg: 'text-[#4D7C0F]', bar: '#65A30D' },
-  'Other': { bg: 'bg-slate-100', fg: 'text-slate-500', bar: '#94A3B8' },
-};
-
-function guessCategory(entry: HistoryEntry): Category {
-  const text = `${entry.title} ${entry.description}`.toLowerCase();
-  if (entry.kind === 'send' || text.includes('transfer')) return 'Transfers';
-  if (entry.kind === 'withdraw') return 'Savings';
-  if (text.includes('deposit') || text.includes('salary') || text.includes('received')) return 'Income';
-  if (text.includes('food') || text.includes('coffee') || text.includes('restaurant')) return 'Food & Drink';
-  if (text.includes('grab') || text.includes('transport') || text.includes('fare')) return 'Transport';
-  if (text.includes('bill') || text.includes('electric') || text.includes('rent')) return 'Bills';
-  if (text.includes('shop') || text.includes('store')) return 'Shopping';
-  return 'Other';
-}
-
-/** Vault-side movements (savings growth) vs. wallet-side movements (spending/income). */
-const VAULT_KINDS = new Set(['deposit', 'withdraw']);
-const isVaultEntry = (entry: HistoryEntry) => VAULT_KINDS.has(entry.kind as string);
-const signedVaultAmount = (entry: HistoryEntry) =>
-  entry.kind === 'withdraw' ? -Math.abs(entry.amount) : Math.abs(entry.amount);
-
-function monthKey(ts: number | string): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function monthLabel(key: string): string {
-  const [y, m] = key.split('-').map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'short' });
-}
-
-function lastMonthKeys(count: number): string[] {
-  const out: string[] = [];
-  const now = new Date();
-  for (let i = count - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  }
-  return out;
 }
 
 const MONTHS_SHOWN = 6;
@@ -230,6 +175,9 @@ export default function MoneyTracker({ history, loading, onRefresh }: MoneyTrack
   const [editingId, setEditingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [zone, setZone] = useState<Zone>('wallet');
+  const [showBudgets, setShowBudgets] = useState(false);
+  const { budgets, spentThisMonth } = useBudgets();
+  const overBudgetCount = budgets.filter((b) => spentThisMonth(b.category) > b.limit).length;
 
   const categorized = useMemo(
     () => history.map((entry) => ({ entry, category: overrides[entry.id] ?? guessCategory(entry) })),
@@ -424,6 +372,33 @@ export default function MoneyTracker({ history, loading, onRefresh }: MoneyTrack
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="pt-1 border-t border-slate-100 space-y-2">
+                <button
+                  onClick={() => setShowBudgets((v) => !v)}
+                  className="w-full flex items-center justify-between text-[10px] font-semibold text-slate-400 uppercase tracking-wide"
+                >
+                  <span className="flex items-center gap-2">
+                    Budgets
+                    {overBudgetCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 normal-case font-bold tracking-normal">
+                        {overBudgetCount} over
+                      </span>
+                    )}
+                  </span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-slate-300 transition-transform ${showBudgets ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {showBudgets && <Budgets />}
               </div>
             </div>
           )}
