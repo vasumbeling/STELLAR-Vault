@@ -37,7 +37,7 @@ export default function VaultZone({
           className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-40 object-contain pointer-events-none select-none"
         />
 
-        <div className="space-y-6 relative z-10">
+        <div className="space-y-2 relative z-10">
           <div className="flex items-center justify-between">
             <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-white/80">Total Balance</span>
           </div>
