@@ -410,6 +410,11 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
               walletUsdcBalance={walletUsdcBalance}
               panel={panel}
               setPanel={setPanel}
+              goalProgress={
+                vaultSummary?.goalAmount
+                  ? Math.min(100, (usdcBalance / vaultSummary.goalAmount) * 100)
+                  : 0
+              }
             />
           )}
 
@@ -484,8 +489,12 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
                 <div className="rounded-2xl bg-white border border-slate-100 p-2 text-[#1A1A1A] animate-fadeIn">
                   <CreateVault
                     publicKey={publicKey}
-                    onCreated={() => { showToast('Vault initialized.', 'success'); void refresh(); }}
-                    onClose={() => setPanel(null)}
+                    onCreated={(vaultId) => {
+                      showToast('Vault created.', 'success');
+                      void refresh();
+                      setPanel(null);
+                      setFocusVaultId(vaultId);
+                    }}
                   />
                 </div>
               )}

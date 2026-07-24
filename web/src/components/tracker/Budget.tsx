@@ -15,7 +15,7 @@ export default function Budget({ loading, historyLength }: BudgetProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [inputLimit, setInputLimit] = useState<string>('');
 
-  const { budgets, setBudget, spentThisMonth } = useBudgets();
+  const { budgets, addBudget, spentThisMonth } = useBudgets();
 
   const activeBudgets = budgets.filter((b) => b.limit > 0);
   const overBudgetCount = activeBudgets.filter((b) => spentThisMonth(b.category) > b.limit).length;
@@ -30,7 +30,7 @@ export default function Budget({ loading, historyLength }: BudgetProps) {
   const handleSaveBudget = (cat: Category) => {
     const val = parseFloat(inputLimit);
     if (!isNaN(val) && val >= 0) {
-      setBudget(cat, val);
+      addBudget({category:cat, limit:val});
     }
     setEditingCategory(null);
     setInputLimit('');

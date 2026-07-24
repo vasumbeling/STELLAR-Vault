@@ -14,8 +14,8 @@ interface VaultZoneProps {
   walletUsdcBalance: number;
   panel: Panel;
   setPanel: (panel: Panel) => void;
-  goalProgress: number;
-  vaultLevel: number;
+  goalProgress?: number;
+  vaultLevel?: number;
   vaultName?: string;
   targetLabel?: string;
   members?: { id: string; initial: string; color?: string }[];
