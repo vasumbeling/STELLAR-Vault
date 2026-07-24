@@ -4,9 +4,7 @@ import React, { useRef, useState } from 'react';
 import { 
   DepositIcon, 
   WithdrawIcon, 
-  SendIcon, 
   CreateIcon, 
-  ReceiveIcon, 
   ShieldEmblemIcon 
 } from '@/app/icons';
 
@@ -20,12 +18,12 @@ interface WheelProps {
   setPanel: (panel: Panel) => void;
 }
 
+// Vault wheel only surfaces vault-native actions. Send/Receive live in the
+// Wallet zone instead, so they're intentionally excluded here.
 const SLOTS = [
   { angle: 0,    tab: 'home', panel: 'deposit'  as Panel, label: "Deposit",  desc: "Securely add funds to your wallet and keep it in USDC value." },
-  { angle: -72,  tab: 'home', panel: 'withdraw' as Panel, label: "Withdraw", desc: "Instantly pull assets back from your wallet." },
-  { angle: -144, tab: 'home', panel: 'create'   as Panel, label: "Vault",    desc: "Create a new customized multi-sig secure vault (savings account)." },
-  { angle: -216, tab: 'home', panel: 'receive'  as Panel, label: "Receive",  desc: "Display your public address and QR code to receive funds." },
-  { angle: -288, tab: 'home', panel: 'send'     as Panel, label: "Send",     desc: "Transfer digital assets globally with ultra-low fees." },
+  { angle: -120, tab: 'home', panel: 'withdraw' as Panel, label: "Withdraw", desc: "Instantly pull assets back from your wallet." },
+  { angle: -240, tab: 'home', panel: 'create'   as Panel, label: "Vault",    desc: "Create a new customized multi-sig secure vault (savings account)." },
 ];
 
 const GLOBAL_PARTICLES = [
@@ -189,7 +187,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
 
           {/* Action Slots */}
           {SLOTS.map((slot, i) => {
-            const angleDeg = (i * 72) - 90;
+            const angleDeg = (i * (360 / SLOTS.length)) - 90;
             const angleRad = (angleDeg * Math.PI) / 180;
             const radius = 50;
             const x = 50 + radius * Math.cos(angleRad);
@@ -200,9 +198,7 @@ export default function Wheel({ activeTab, panel, setActiveTab, setPanel }: Whee
             const icons: Record<string, React.ReactNode> = {
               deposit: <DepositIcon className="w-5.5 h-5.5" />,
               withdraw: <WithdrawIcon className="w-5.5 h-5.5" />,
-              send: <SendIcon className="w-5.5 h-5.5" />,
               create: <CreateIcon className="w-6 h-6" />,
-              receive: <ReceiveIcon className="w-5.5 h-5.5" />,
             };
 
             return (

@@ -72,7 +72,8 @@ function NavGlyph({ type }: { type: Tab }) {
 
 
 import PinUnlockPanel from './PinUnlockPanel';
-import DepositReceivePanel from '@/components/dashboard/DepositReceivePanel';
+import DepositPanel from '@/components/dashboard/DepositPanel';
+import ReceivePanel from '@/components/dashboard/ReceivePanel';
 import WithdrawPanel from './WithdrawPanel';
 import SendPanel from './SendPanel';
 import type { Panel, Tab } from '@/lib/dashboardTypes';
@@ -758,18 +759,22 @@ return (
                   />
                 )}
 
-                {/* ---------- DEPOSIT & RECEIVE COMBINED CONTAINER ---------- */}
-                {(panel === 'deposit' || panel === 'receive') && publicKey && (
-                  <DepositReceivePanel
-                    panel={panel}
-                    setPanel={setPanel}
-                    publicKey={publicKey}
+                {/* ---------- DEPOSIT CONTAINER ---------- */}
+                {panel === 'deposit' && (
+                  <DepositPanel
                     phpRate={phpRate}
                     busy={busy}
                     loading={loading}
                     depositAmount={depositAmount}
                     onDepositAmountChange={setDepositAmount}
                     onDeposit={handleDeposit}
+                  />
+                )}
+
+                {/* ---------- RECEIVE CONTAINER ---------- */}
+                {panel === 'receive' && publicKey && (
+                  <ReceivePanel
+                    publicKey={publicKey}
                     receiveMode={receiveMode}
                     onReceiveModeChange={setReceiveMode}
                     copied={copied}
