@@ -39,6 +39,7 @@ export interface TransferState {
 
 export interface TransferOptions {
   recipient?: string;
+  category?: string;
   onCompleted?: () => void | Promise<void>;
 }
 
@@ -236,7 +237,7 @@ async function runTransfer(
         ? `Saved ${normalizedAmount.toFixed(7)} USDC into the vault`
         : operation === 'withdraw'
           ? `Withdrew ${normalizedAmount.toFixed(7)} USDC from the vault`
-          : `Sent ${normalizedAmount.toFixed(7)} USDC to ${options.recipient ?? ''}`,
+          : `${options.category ? `[${options.category}] ` : ''}Sent ${normalizedAmount.toFixed(7)} USDC to ${options.recipient ?? ''}`,
       amount: normalizedAmount,
       asset: 'USDC',
       counterparty: operation === 'transfer' ? options.recipient ?? '' : 'vault',
