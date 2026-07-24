@@ -32,6 +32,12 @@ export const CATEGORY_STYLE: Record<Category, { bg: string; fg: string; bar: str
 };
 
 export function guessCategory(entry: HistoryEntry): Category {
+  const tagMatch = entry.description?.match(/^\[([^\]]+)\]/);
+  if (tagMatch) {
+    const tagged = tagMatch[1] as Category;
+    if ((CATEGORIES as readonly string[]).includes(tagged)) return tagged;
+  }
+
   const text = `${entry.title} ${entry.description}`.toLowerCase();
   if (entry.kind === 'send' || text.includes('transfer')) return 'Transfers';
   if (entry.kind === 'withdraw') return 'Savings';
@@ -67,6 +73,10 @@ export function lastMonthKeys(count: number): string[] {
     out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
   return out;
+}
+
+export function stripCategoryTag(description: string): string {
+  return description.replace(/^\[[^\]]+\]\s*/, '');
 }
 
 export function currentMonthKey(): string {

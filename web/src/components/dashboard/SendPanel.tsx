@@ -1,11 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { SparkleStar } from '@/app/icons';
 import QRScanner from '@/components/shared/QRScanner';
 import type { PendingTransferApproval } from '@/lib/transfer';
-import { useBudgets } from '@/lib/budgets';
-import { BUDGETABLE_CATEGORIES, CATEGORY_STYLE, type Category } from '@/lib/spendCategories';
 
 export default function SendPanel({
   publicKey,
@@ -46,46 +43,6 @@ export default function SendPanel({
   scanError: string;
   onQrScanResult: (raw: string) => void;
 }) {
-  const { addBudget } = useBudgets();
-  const [awaitingSubmit, setAwaitingSubmit] = useState(false);
-  const [lastSentAmount, setLastSentAmount] = useState<string | null>(null);
-  const [showBudgetOffer, setShowBudgetOffer] = useState(false);
-  const [budgetCategory, setBudgetCategory] = useState<Category>('Transfers');
-  const [budgetLimit, setBudgetLimit] = useState('');
-  const [budgetLinked, setBudgetLinked] = useState(false);
-
-  // A submitted (not voided) transfer resolves pendingApproval back to null.
-  // That's the signal a send actually completed, distinct from cancellation.
-  useEffect(() => {
-    if (pendingApproval === null && awaitingSubmit) {
-      setAwaitingSubmit(false);
-      setShowBudgetOffer(true);
-      setBudgetLimit(lastSentAmount ?? '');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingApproval]);
-
-  // A fresh request cycle starting means any previous offer is stale.
-  useEffect(() => {
-    if (pendingApproval !== null) {
-      setShowBudgetOffer(false);
-      setBudgetLinked(false);
-    }
-  }, [pendingApproval]);
-
-  const handleSubmit = () => {
-    setLastSentAmount(pendingApproval?.amount != null ? String(pendingApproval.amount) : null);
-    setAwaitingSubmit(true);
-    onSubmitApprovedTransfer();
-  };
-
-  const confirmBudget = () => {
-    const limit = Number(budgetLimit);
-    if (!isFinite(limit) || limit <= 0) return;
-    addBudget({ category: budgetCategory, limit });
-    setBudgetLinked(true);
-  };
-
   return (
     <div className="rounded-2xl bg-white border border-slate-100 p-5 text-[#1A1A1A] space-y-4 animate-fadeIn">
       {!publicKey ? (
@@ -182,7 +139,7 @@ export default function SendPanel({
                       </button>
                     )}
                     {pendingApproval.sender === publicKey && pendingApproval.senderAuthorized && pendingApproval.receiverAuthorized && (
-                      <button type="button" onClick={handleSubmit} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-linear-to-r from-[#FF9F1C] to-[#F37A00] text-white text-[10px] uppercase tracking-widest font-normal disabled:opacity-50">
+                      <button type="button" onClick={onSubmitApprovedTransfer} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-linear-to-r from-[#FF9F1C] to-[#F37A00] text-white text-[10px] uppercase tracking-widest font-normal disabled:opacity-50">
                         {busy ? 'Processing…' : 'Submit Payload'}
                       </button>
                     )}
@@ -195,65 +152,6 @@ export default function SendPanel({
                       Void
                     </button>
                   </div>
-                </div>
-              )}
-
-              {showBudgetOffer && (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-3 text-[11px] animate-fadeIn">
-                  {!budgetLinked ? (
-                    <>
-                      <p className="text-slate-500 font-normal">
-                        Track sends like this against a monthly budget?
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {BUDGETABLE_CATEGORIES.map((cat) => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setBudgetCategory(cat)}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors ${
-                              budgetCategory === cat
-                                ? `${CATEGORY_STYLE[cat].bg} ${CATEGORY_STYLE[cat].fg} border-transparent`
-                                : 'bg-white border-slate-200 text-slate-500'
-                            }`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={budgetLimit}
-                          onChange={(e) => setBudgetLimit(e.target.value)}
-                          placeholder="Monthly limit"
-                          className="flex-1 rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-300 placeholder:text-slate-300"
-                        />
-                        <span className="text-[10px] text-slate-400">USDC</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={confirmBudget}
-                          disabled={!budgetLimit || Number(budgetLimit) <= 0}
-                          className="flex-1 py-2 rounded-xl bg-emerald-600 text-white text-[10px] uppercase tracking-wide font-normal disabled:opacity-40"
-                        >
-                          Set Budget
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowBudgetOffer(false)}
-                          className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-[10px] uppercase tracking-wide text-slate-400"
-                        >
-                          Skip
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-emerald-600/80 font-normal">
-                      {budgetCategory} envelope created — track it from Money Tracker.
-                    </p>
-                  )}
                 </div>
               )}
             </>

@@ -162,6 +162,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
   const [withdrawAmount, setWithdrawAmount] = useState('50');
   const [recipient, setRecipient] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
+  const [transferCategory, setTransferCategory] = useState<string | undefined>(undefined);
 
   // Sub-mode selectors
   const [sendMode, setSendMode] = useState<'amount' | 'qr'>('amount');
@@ -411,8 +412,9 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     showToast('Cashing out is coming soon. Your funds stay safely in your wallet for now.', 'info');
   };
 
-  const handleTransferRequest = async () => {
+  const handleTransferRequest = async (category?: string) => {
     if (!publicKey || !recipient || !transferAmount) return;
+    setTransferCategory(category);
     setBusy(true);
     try {
       await createPendingTransferApproval(recipient, Number(transferAmount));
@@ -459,8 +461,9 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     try {
       await runWithReauth(async () => {
         await transferUSDC(pendingApproval.recipient, pendingApproval.amount, {
+          category: transferCategory,
           onCompleted: async () => {
-            setRecipient(''); setTransferAmount('');
+            setRecipient(''); setTransferAmount(''); setTransferCategory(undefined);
             await removePendingTransferApproval(pendingApproval.id);
             await refreshHistory(publicKey);
             await refreshPendingApproval();
@@ -481,6 +484,7 @@ export default function SavingsDashboard({ publicKey, wallet, onLogout, headerAc
     setBusy(true);
     try {
       await removePendingTransferApproval(pendingApproval.id);
+      setTransferCategory(undefined);
       await refreshPendingApproval();
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Failed to cancel transfer request', 'error');
